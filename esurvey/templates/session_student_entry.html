@@ -1,0 +1,38 @@
+
+{% extends "base.html" %}
+{% load i18n %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% endblock %}
+
+
+
+{% block content %}
+<h2 > Join Session</h2>
+<hr/>
+
+<div class='row '>
+
+  <div  class='col-md-6'>
+
+
+  <form action="" method="post">
+  {% csrf_token %}
+  <div class="form-group">
+      <label for="exampleInputEmail1"></label>
+      <input type="text" class="form-control form-control-lg" id="sessionPin" name='pin' aria-describedby="emailHelp" placeholder="Enter session pin">
+      <small id="pinHelp" class="form-text text-muted">If you do not have the pin ask your instructor to provide to join the session.</small>
+    </div>
+    <br/>
+  <input type="submit"   class="btn btn-success btn-block" value="{% trans "Enter" %}"/>
+
+  </form>
+</div>
+</div>
+
+
+
+
+
+</div>
+{% endblock %}

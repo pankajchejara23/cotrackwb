@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{%block title%} Sessions {%endblock%}
+{%block content%}
+<div style="height:100%">
+
+<!--
+  <iframe id="demo" onload='autoResizeDiv()'  style="width:100%; height: 100%; position:relative; overflow:hidden; " frameBorder='0' src="http://localhost:9001" allowfullscreen>
+  </iframe>
+-->
+ <table class="table table-striped">
+  <thead>
+    <tr>
+      <th scope="col">Session</th>
+      <th scope="col">#Groups</th>
+      <th scope="col">Status</th>
+      <th scope="col">Created</th>
+      <th> </th>
+    </tr>
+  </thead>
+  <tbody>
+
+
+
+ {% for session in sessions%}
+ <tr>
+   <th><a href="{% url 'session_page' session.id %}" target='_blank'>{{session.name}}</a></th>
+   <td>{{session.groups}}</td>
+   <td>{{session.status}}</td>
+   <td>{{session.created_at}}</td>
+   <td><button class='btn btn-success'> Start </button> <button class='btn btn-danger' disabled> End </button> <button class='btn btn-info' disabled> Monitor </button>   </td>
+ </tr>
+ {% endfor%}
+ </tbody>
+ </table>
+</div>
+<br/>
+
+{%endblock %}

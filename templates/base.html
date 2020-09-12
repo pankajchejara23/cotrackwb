@@ -1,0 +1,183 @@
+{% load static%}
+{% load i18n %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <title> CoTrack</title>
+  <script src="{% static 'vendor/jquery/jquery.min.js' %}"></script>
+  <!-- Bootstrap core CSS -->
+  <link href="https://fonts.googleapis.com/css?family=Roboto|Varela+Round" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <script src="{% static 'popper.min.js' %}"></script>
+  <script src="{% static 'my.js' %}"></script>
+  <script src="{% static 'RecordRTC.js' %}"></script>
+  <script src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
+  <link href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+          <link href="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/3.1.0/css/flag-icon.min.css" rel="stylesheet">
+  <link href="{% static 'bs-step.css' %}" rel="stylesheet">
+
+  <script language="javascript">
+          function autoResizeDiv()
+          {
+              document.getElementById('demo').style.height = window.innerHeight- 10 +'px';
+          }
+          window.onresize = autoResizeDiv;
+          autoResizeDiv();
+
+       var recordRTC = RecordRTC(mediaStream);
+       recordRTC.startRecording();
+       recordRTC.stopRecording(function(audioURL) {
+          mediaElement.src = audioURL;
+       });
+
+
+
+  </script>
+  <style>
+
+  .custom-radio-list {
+      list-style-type: none;
+      padding: 0;
+      margin: 0;
+  }
+    .form-inline {
+        display: inline-block;
+    }
+    .navbar {
+    		color: #fff;
+    		background: #926dde;
+    		padding: 5px 16px;
+    		border-radius: 0;
+    		border: none;
+    		box-shadow: 0 0 4px rgba(0,0,0,.1);
+    	}
+
+    	.navbar .divider {
+    		background-color: #e9ecef !important;
+    	}
+      .fill {
+    min-height: 100%;
+    height: 100%;
+}
+iframe {
+    display:block;
+    width:100%;
+    height:100%;
+    frameB
+}
+</style>
+
+</head>
+
+<body>
+  <!-- Code to change survey title, subtitle, and paragraph on basis of language selection -->
+
+
+
+
+
+
+  <nav class="navbar navbar-expand-xl navbar-dark">
+    <div class='container'>
+
+  		<a class="navbar-brand" href="{% url 'home'%}"><i class="fa fa-cube"></i> CoTrack<b></b></a>
+  		<button type="button" data-target="#navbarCollapse" data-toggle="collapse" class="navbar-toggler">
+  			<span class="navbar-toggler-icon"></span>
+
+  		</button>
+
+  	<!-- Collection of nav links, forms, and other content for toggling -->
+  	<div id="navbarCollapse" class="collapse navbar-collapse justify-content-end">
+
+  		<ul class="nav navbar-nav">
+        {% if request.user.is_authenticated  %}
+        <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle mr-auto" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          {{request.user.email}}
+        </a>
+        <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+          <a class="dropdown-item" href="{% url 'project_home'%}"><i class="fa fa-gear"></i> Projects</a>
+          <a class="dropdown-item" href="#"><i class="fa fa-user"></i>  Profile</a>
+
+          <div class="dropdown-divider"></div>
+          <a class="dropdown-item" href="#"><i class="fa fa-sign-out"></i> Logout</a>
+        </div>
+      </li>
+
+
+
+        {% else %}
+        <li class='nav-item'><a class='nav-link'  href="{%url 'register'%}"><i class="fa fa-user"></i> <span>Sign-up</span></a></li>
+        <li class='nav-item'><a class='nav-link'  href="{%url 'login'%}"><i class="fa fa-sign-in"></i> <span>Login</span></a></li>
+        {% endif %}
+        <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="http://example.com" id="dropdown09" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span class="flag-icon flag-icon-us"> </span> English</a>
+            <div class="dropdown-menu" aria-labelledby="dropdown09">
+              <a class="dropdown-item" href="#fr"><span class="flag-icon flag-icon-pt"> </span> Portugese</a>
+              <a class="dropdown-item" href="#it"><span class="flag-icon flag-icon-ee"> </span> Estonian</a>
+
+            </div>
+        </li>
+  		</ul>
+  	</div>
+  </div>
+  </nav>
+
+
+
+
+  <!-- Page Content -->
+  <div class="container">
+      <br/>
+
+    <h2> {% block title%} {%endblock%} </h2>
+
+    {% if messages %}
+    {% for message in messages %}
+    {% if message.tags == 'error'%}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+      {{ message }}
+      <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
+    {% else %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+      {{ message }}
+      <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
+    {%endif%}
+{% endfor %}
+{% endif %}
+
+
+
+    {% block content%}
+
+    {% endblock %}
+    <br/>
+  </div>
+</div>
+  </div>
+
+<br/>
+<br/>
+<br/>
+
+  <!-- Bootstrap core JavaScript -->
+
+
+  	<!-- ./Footer -->
+</body>
+
+</html>

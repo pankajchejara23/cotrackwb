@@ -1,0 +1,33 @@
+
+{% extends "base.html" %}
+{% load i18n %}
+{% load crispy_forms_tags %}
+
+{% block title %} {% endblock %}
+
+{% block content %}
+<h2>{{session.name | upper}}</h2>
+<h4>Access Pin: {{session.sessionpin.pin}} </h4>
+<small> This pin can be used to join the session once it is started. </small><hr/>
+{% if not session.status %}
+<a href="{% url 'session_activate' session.id %}" class='btn btn-success pl-5 pr-5 mr-4'>  Start  </a>
+<button class='btn btn-danger pl-5 pr-5 mr-4' disabled>  End  </button>
+{% else %}
+<button class='btn btn-success pl-5 pr-5 mr-4' disabled>  Start  </button>
+<a href="{% url 'session_deactivate' session.id %}" class='btn btn-danger pl-5 pr-5 mr-4'>  End </a>
+
+{% endif %}
+
+<div id='time_display'>  </div>
+
+<hr/>
+<div class='container'>
+ <div class='row'>
+   <div class='column'>
+
+   </div>
+ </div>
+</div>
+
+
+{% endblock %}
