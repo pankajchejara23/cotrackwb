@@ -6,11 +6,17 @@ from django.forms.fields import Field
 from datetime import date
 from django.core.exceptions import ValidationError
 from django.utils.safestring import mark_safe
-from .models import Session
+from .models import Session, Audiofl
 from django.forms import ModelForm
 
 setattr(Field, 'is_checkbox', lambda self: isinstance(self.widget, forms.CheckboxInput ))
 
+
+class AudioflForm(forms.ModelForm):
+    class Meta:
+        model = Audiofl
+        fields = ('description', 'fl', )
+        widgets = {'fl': forms.HiddenInput()}
 
 class SessionForm(ModelForm):
     class Meta:

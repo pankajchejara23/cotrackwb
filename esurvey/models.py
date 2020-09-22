@@ -5,6 +5,11 @@ from django.contrib import admin
 import datetime
 
 
+def user_directory_path(instance, filename):
+    # file will be uploaded to MEDIA_ROOT/user_<id>/<filename>
+    return 'session_{0}/group_{1}/user_{2}'.format(instance.session.id,instance.group,instance.user, filename)
+
+
 class Session(models.Model):
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
@@ -12,6 +17,17 @@ class Session(models.Model):
     description = models.CharField(max_length=2000)
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.BooleanField(default=False)
+
+
+class Audiofl(models.Model):
+    session = models.ForeignKey(Session,on_delete=models.CASCADE)
+    group = models.IntegerField()
+    user = models.CharField(max_length=250)
+    sequence = models.IntegerField()
+    description = models.TextField()
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    fl = models.FileField(upload_to='audio_uploads')
+
 
 class SessionPin(models.Model):
     session = models.OneToOneField(Session, on_delete=models.CASCADE)

@@ -16,6 +16,9 @@ urlpatterns = [
     path("sessions/deactivate/<session_id>", login_required(views.deactivateSession), name="session_deactivate"),
     path("projects/new/",login_required(CompleteForm.as_view(CREATE_FORMS)), name="create"),
     path("enter/",views.enterForm, name="student_entry"),
-    path("enter/pad",views.getPad, name="student_pad"),
+    path("enter/pad/<group_id>",views.getPad, name="student_pad"),
     path("projects/report", login_required(views.getReport), name="project_report"),
+    path("audio/", views.model_form_upload, name='views.model_form_upload'),
+    path("audiolist/", views.list_files, name='views.list_files'),
+    path("upload/", views.uploadAudio, name='upload_audio'),
     ]

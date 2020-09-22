@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-from .forms import CreateForm1,CreateForm2,CreateForm3,CreateForm4, lastForm, AnonyForm, SessionForm
+from .forms import CreateForm1,CreateForm2,CreateForm3,CreateForm4, lastForm, AnonyForm, SessionForm, AudioflForm
 from formtools.wizard.views import SessionWizardView
 from django import forms
 from django.db import transaction
@@ -13,6 +13,8 @@ from django.db.models import Count
 from datetime import date
 from django.db import transaction
 import uuid
+from django.core.files.storage import FileSystemStorage
+from .models import Audiofl
 
 CREATE_FORMS = (
     ("questionnaire", CreateForm1),
@@ -26,6 +28,49 @@ TEMPLATES = {"questionnaire": "create.html",
              "participants": "create.html",
              "editq": "create.html",
              "overview": "overview.html"}
+
+
+
+import os
+from django.core.files.base import File
+from django.shortcuts import render, redirect
+
+
+
+def model_form_upload(request):
+    if request.method == 'POST':
+        form = AudioflForm(request.POST, request.FILES)
+        print('function called')
+        if form.is_valid():
+            newform = form.save(commit=False)
+            print('valid form')
+            djfile = File(request.FILES['fl'])
+            newform.fl.save(request.FILES['fl'].name, djfile)
+            newform.save()
+            print('data saved')
+
+            # convert to fix the duration of audio
+            file_path = newform.fl.path
+            #os.system("/usr/bin/mv %s %s" % (file_path, (file_path + '.original')))
+            #os.system("/usr/bin/ffmpeg -i %s -c copy -fflags +genpts %s" % ((file_path + '.original'), file_path))
+
+            return redirect('/')
+    else:
+        form = AudioflForm()
+    return render(request, 'model_form_upload.html', {
+        'form': form
+    })
+
+
+def list_files(request):
+    files = Audiofl.objects.all().order_by('uploaded_at')
+
+    return render(request, 'list_files.html', {
+        'files': files
+    })
+
+
+
 
 def is_valid_uuid(val):
     try:
@@ -187,6 +232,13 @@ def generateSurvey(request,link):
 
 
 
+
+
+
+
+
+
+
 # Create your views here.
 def overview(request):
     sessions = Session.objects.all().filter(owner=request.user)
@@ -195,6 +247,9 @@ def overview(request):
 
 def enterForm(request):
     if request.method == "POST":
+        request.session.flush()
+
+
         s_pin = request.POST['pin']
 
         session = SessionPin.objects.all().filter(pin=s_pin)
@@ -204,14 +259,52 @@ def enterForm(request):
             return render(request,"session_student_entry.html",{})
         else:
             session_obj = SessionPin.objects.get(pin=s_pin)
+            print('Session Key:',request.session.session_key)
+            if not request.session or not request.session.session_key:
+                request.session.save()
+                request.session['session_id'] = session_obj.id
+
+            print('Session Key:',request.session.session_key)
+
             groups = range(session_obj.session.groups)
             return render(request,'student_session_home.html',{'session':session_obj.session,'groups':groups})
     else:
+        if 'session_id' in request.session.keys():
+            session_obj = SessionPin.objects.get(id=request.session['session_id'])
+            groups = range(session_obj.session.groups)
+            return render(request,'student_session_home.html',{'session':session_obj.session,'groups':groups})
+        else:
 
-        return render(request,"session_student_entry.html",{})
+            return render(request,"session_student_entry.html",{})
 
-def getPad(request):
-    return render(request,'pad.html',{'group':'group-1'})
+def uploadAudio(request):
+    if request.method == 'POST':
+        form = AudioflForm(request.POST,request.FILES)
+        if form.is_valid():
+            newform = form.save(commit=False)
+            djfile = File(request.FILES['data_blob'])
+            newform.fl.save(request.FILES['data_blob'].name,djfile)
+            newform.save()
+            return HttpResponse('Done')
+    else:
+        return HttpResponse('Not done')
+
+
+def getPad(request,group_id):
+    if 'session_id' in request.session.keys():
+        session_obj = SessionPin.objects.get(id=request.session['session_id'])
+
+        if int(group_id) > session_obj.session.groups or int(group_id) < 1:
+            messages.error(request,'Invalid group id')
+            return redirect('student_entry')
+
+
+        form = AudioflForm()
+
+        return render(request,'pad.html',{'group':group_id,'session':request.session['session_id'],'form':form})
+    else:
+        messages.error(request,'Session is not authenticated. Enter the access pin.')
+        return redirect('student_entry')
 
 def activateSession(request,session_id):
     session = Session.objects.all().filter(id=session_id)

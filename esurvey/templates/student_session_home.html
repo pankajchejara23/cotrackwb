@@ -27,7 +27,7 @@
       {% for group in groups %}
       <tr>
         <td>Group-{{forloop.counter}}</td>
-        <td><a href='{% url 'student_pad' %}' class='btn btn-success pl-5 pr-5'>Enter</a></td>
+        <td><a href='{% url 'student_pad' forloop.counter  %}' class='btn btn-success pl-5 pr-5'>Enter</a></td>
 
       </tr>
       {%endfor%}
