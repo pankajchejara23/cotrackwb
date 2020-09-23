@@ -20,13 +20,13 @@ class Session(models.Model):
 
 
 class Audiofl(models.Model):
-    session = models.ForeignKey(Session,on_delete=models.CASCADE)
-    group = models.IntegerField()
+    session = models.IntegerField(blank=True)
+    group = models.IntegerField(blank=True)
     user = models.CharField(max_length=250)
-    sequence = models.IntegerField()
-    description = models.TextField()
+    sequence = models.IntegerField(blank=True)
+    description = models.TextField(blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
-    fl = models.FileField(upload_to='audio_uploads')
+    fl = models.FileField(upload_to='audio_uploads', blank=True)
 
 
 class SessionPin(models.Model):
@@ -94,3 +94,4 @@ admin.site.register(Project)
 admin.site.register(Survey)
 admin.site.register(Link)
 admin.site.register(Submission)
+admin.site.register(Audiofl)

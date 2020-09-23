@@ -10,6 +10,13 @@
 <audio controls autoplay playsinline></audio>
 <br/>
 
+<!--
+<iframe id="aud" style="width:100%; height: 500px; overflow:scroll !important;"  frameBorder='2' scrolling="yes" src="http://localhost:8000/audio">
+</iframe>
+<hr/>
+-->
+
+
 <form action="" method="post">
 {% csrf_token %}
 
@@ -94,14 +101,18 @@ document.getElementById('btn-stop-recording').onclick = function() {
                     fd.append('csrfmiddlewaretoken', "{{ csrf_token }}");
                     fd.append('data_blob', blob, + new Date() + '.' + blob.type.split('/')[1]);
                     fd.append('description', 'chunks');
-                    fd.append('session',{{session}});
-                    fd.append('user','user-1');
-                    fd.append('sequence',blobcount);
+                    fd.append('session',1);
+                    fd.append('user',"1");
+                    fd.append('group',1);
+                    fd.append('sequence',2);
+
+                    console.log(fd);
                     var xhr = new XMLHttpRequest();
+                    console.log('opening connection');
                     xhr.open('POST', '/upload/', true);
-
+                    console.log('data sending')
                     xhr.send(fd);
-
+                    console.log('data sent');
             }
 </script>
 <br/>

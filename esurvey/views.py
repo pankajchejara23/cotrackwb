@@ -280,13 +280,19 @@ def enterForm(request):
 def uploadAudio(request):
     if request.method == 'POST':
         form = AudioflForm(request.POST,request.FILES)
+        print(form)
         if form.is_valid():
+            print('Form is valid')
             newform = form.save(commit=False)
             djfile = File(request.FILES['data_blob'])
             newform.fl.save(request.FILES['data_blob'].name,djfile)
             newform.save()
             return HttpResponse('Done')
+        else:
+            print('Form not valid')
+            return HttpResponse('Form not valid')
     else:
+
         return HttpResponse('Not done')
 
 

@@ -15,8 +15,8 @@ setattr(Field, 'is_checkbox', lambda self: isinstance(self.widget, forms.Checkbo
 class AudioflForm(forms.ModelForm):
     class Meta:
         model = Audiofl
-        fields = ('description', 'fl', )
-        widgets = {'fl': forms.HiddenInput()}
+        fields = ('description', 'fl', 'session','user','group','sequence' )
+        widgets = {'description':forms.HiddenInput(),'fl': forms.HiddenInput(),'session':forms.HiddenInput(),'user':forms.HiddenInput(),'group':forms.HiddenInput(),'sequence':forms.HiddenInput()}
 
 class SessionForm(ModelForm):
     class Meta:
