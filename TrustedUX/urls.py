@@ -35,4 +35,5 @@ urlpatterns = [
     path('login/', v.login,name='login'),
     path('logout/',v.logout,name='logout'),
     path('',views.index,name='home'),
+    path('djrichtextfield/', include('djrichtextfield.urls'))
 ]

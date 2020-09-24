@@ -294,7 +294,9 @@ def uploadAudio(request):
     else:
 
         return HttpResponse('Not done')
-
+def LeaveSession(request):
+    request.session.flush()
+    return redirect('home')
 
 def getPad(request,group_id):
     if 'session_id' in request.session.keys():
@@ -307,7 +309,7 @@ def getPad(request,group_id):
 
         form = AudioflForm()
 
-        return render(request,'pad.html',{'group':group_id,'session':request.session['session_id'],'form':form})
+        return render(request,'pad.html',{'group':group_id,'session_obj':session_obj.session,'session':request.session['session_id'],'form':form})
     else:
         messages.error(request,'Session is not authenticated. Enter the access pin.')
         return redirect('student_entry')

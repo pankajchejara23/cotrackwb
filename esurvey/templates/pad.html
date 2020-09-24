@@ -1,13 +1,28 @@
 {% extends "base.html" %}
 
-{%block title%} Group-{{group | upper}}<hr/>Session-{{session}}{%endblock%}
+{%block title%} Session-{{session_obj.name}} <hr/>{%endblock%}
+
 {%block content%}
 
-<button id="btn-start-recording" class='btn btn-success'>Start Recording</button>
-<button id="btn-stop-recording" disabled class='btn btn-danger'>Stop Recording</button>
+<div clas='col col-4'>
+ Group: {{group | upper}}
+</div>
+<div clas='col col-4'>
+ Instructor: {{session_obj.owner | upper}}
+</div>
+
+<hr/>
+
+
+
+
+
+<button id="btn-start-recording" class='btn btn-success '>Start Session</button>
+<button id="btn-stop-recording" disabled class='btn btn-danger float-right'>Stop Session</button>
+
 
 <hr>
-<audio controls autoplay playsinline></audio>
+
 <br/>
 
 <!--
@@ -16,48 +31,88 @@
 <hr/>
 -->
 
-
 <form action="" method="post">
 {% csrf_token %}
 
 {{form}}
 
 
-<input type="submit" class="btn btn-success" value="Upload"/>
+
 
 </form>
 
 
-<div style="height:100%">
+<div class='card'>
+  <h3 class='card-header text-white bg-danger border-danger'>
+    Problem
+  </h3>
+  <div class='card-body'>
 
+  {{session_obj.description | safe}}
 
-  <iframe id="demo" onload='autoResizeDiv()'  style="width:100%; height: 100%; position:relative; overflow:hidden; " frameBorder='0' src="http://localhost:9001/p/{{session}}_{{group}}" allowfullscreen>
-  </iframe>
-
-
+  </div>
 </div>
+
+
+<br/>
+<br/>
+
+
+
+
+  <div class='card'>
+    <h3 class='card-header text-white bg-success border-success'>
+      Write solution here
+    </h3>
+  <div class='cardbody'>
+   <iframe id="demo" onload='autoResizeDiv()'  style="width:100%; height: 100%; position:relative; overflow:hidden; " frameBorder='0' src="http://localhost:9001/p/{{session}}_{{group}}" allowfullscreen>
+   </iframe>
+   </div>
+ </div>
+
+
+
 <script>
-var audio = document.querySelector('audio');
+console.log('Started webgazer');
+wb = webgazer.begin();
+//var audio = document.querySelector('audio');
+wb.setGazeListener(function(data, elapsedTime) {
+    console.log('Function called');
+    if (data == null) {
+        return;
+    }
+    var xprediction = data.x; //these x coordinates are relative to the viewport
+    var yprediction = data.y; //these y coordinates are relative to the viewport
+    console.log(elapsedTime);
+    console.log(xprediction + ' ' +yprediction); //elapsed time is based on time since begin was called
+}).begin();
+
 
 function captureMicrophone(callback) {
               console.log('capturing microphone ...');
                 navigator.getUserMedia = navigator.getUserMedia || navigator.mediaDevices.getUserMedia || navigator.webkitGetUserMedia;
-                navigator.getUserMedia({audio: true}, callback, function(error) {
-                    alert('Unable to access your microphone.');
+                navigator.getUserMedia({audio: true, video:true}, callback, function(error) {
+                    alert('Unable to access your camera.');
                     console.error(error);
                 });
             }
 
 function stopRecordingCallback() {
                 var blob = recorder.getBlob();
-                audio.src = URL.createObjectURL(blob);
-                audio.muted = false;
+                //audio.src = URL.createObjectURL(blob);
+                //audio.muted = false;
                 //audio.play();
 
+                //video.src = recorder.getBlob()
+
+                var blob = new File(data,'video.webm',{type:'vide/webm'})
+                //video.src = URL.createObjectURL(blob);
+                postBlob(blob,-1);
+                console.log('Sending final file');
                 recorder.microphone.stop();
                 //postBlob(blob);
             }
-
+data = [];
 var recorder; // globally accessible
             var blobcount = 0
             document.getElementById('btn-start-recording').onclick = function() {
@@ -65,16 +120,17 @@ var recorder; // globally accessible
                 console.log('start recording');
                 captureMicrophone(function(microphone) {
 
-                    audio.muted = true;
-                    audio.play();
+                    //audio.muted = true;
+                  //  audio.play();
                     console.log('Creating recordRTC');
                     recorder = RecordRTC(microphone, {
                         recorderType: MediaStreamRecorder,
-                        mimeType: 'audio/wav',
+                        mimeType: 'video/webm',
                         timeSlice: 5000, // pass this parameter
                         ondataavailable: function(blob) {
                             blobcount =  blobcount + 1;
                             console.log('sending data:'+ blobcount);
+                            data.push(blob);
                             postBlob(blob,blobcount);
                         }
                     });
@@ -94,19 +150,29 @@ document.getElementById('btn-stop-recording').onclick = function() {
     this.disabled = true;
     recorder.stopRecording(stopRecordingCallback);
 };
-
+          user =1;
           function postBlob(blob,blobcount){
                     console.log('postBlob called');
                     var fd = new FormData();
                     fd.append('csrfmiddlewaretoken', "{{ csrf_token }}");
-                    fd.append('data_blob', blob, + new Date() + '.' + blob.type.split('/')[1]);
-                    fd.append('description', 'chunks');
-                    fd.append('session',1);
-                    fd.append('user',"1");
-                    fd.append('group',1);
-                    fd.append('sequence',2);
+                    //fd.append('data_blob', blob, + new Date() + '.' + blob.type.split('/')[1]);
+                    if (blobcount ==-1) {
+                      fd.append('data_blob', blob, + {{session}} + '_' + {{group}}+'_'+ user + '_Final_file.' + blob.type.split('/')[1]);
 
-                    console.log(fd);
+                      fd.append('description', 'Final audio file');
+                    }
+                    else {
+                      fd.append('data_blob', blob, + {{session}} + '_' + {{group}}+'_'+ user + '_' + blobcount +'.' + blob.type.split('/')[1]);
+
+                      fd.append('description', 'Audio file chunks');
+                    }
+
+                    fd.append('session',{{session}});
+                    fd.append('user',"1");
+                    fd.append('group',{{group}});
+                    fd.append('sequence',blobcount);
+                    console.log( {{session}} + '_' + {{group}}+'_'+ user + '.' + blob.type.split('/')[1]);
+                    //console.log(fd);
                     var xhr = new XMLHttpRequest();
                     console.log('opening connection');
                     xhr.open('POST', '/upload/', true);

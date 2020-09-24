@@ -120,6 +120,7 @@
                     var fd = new FormData();
                     fd.append('csrfmiddlewaretoken', "{{ csrf_token }}");
                     fd.append('fl', blob, + new Date() + '.' + blob.type.split('/')[1]);
+                    
                     console.log(blob, + new Date() + '.' + blob.type.split('/')[1]);
                     fd.append('description', 'chunks'+bcount);
                     var xhr = new XMLHttpRequest();

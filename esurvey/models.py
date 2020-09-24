@@ -26,7 +26,7 @@ class Audiofl(models.Model):
     sequence = models.IntegerField(blank=True)
     description = models.TextField(blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
-    fl = models.FileField(upload_to='audio_uploads', blank=True)
+    fl = models.FileField(upload_to='session_data', blank=True, )
 
 
 class SessionPin(models.Model):
@@ -95,3 +95,4 @@ admin.site.register(Survey)
 admin.site.register(Link)
 admin.site.register(Submission)
 admin.site.register(Audiofl)
+admin.site.register(Session)

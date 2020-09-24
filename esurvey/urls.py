@@ -20,5 +20,6 @@ urlpatterns = [
     path("projects/report", login_required(views.getReport), name="project_report"),
     path("audio/", views.model_form_upload, name='views.model_form_upload'),
     path("audiolist/", views.list_files, name='views.list_files'),
+    path("leave/",views.LeaveSession, name='leave_session'),
     path("upload/", views.uploadAudio, name='upload_audio'),
     ]

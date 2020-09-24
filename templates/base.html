@@ -5,6 +5,9 @@
 
 <head>
 
+  {% if form %}
+   {{form.media}}
+   {% endif %}
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <meta name="description" content="">
@@ -16,14 +19,17 @@
   <link href="https://fonts.googleapis.com/css?family=Roboto|Varela+Round" rel="stylesheet">
   <script src="https://www.WebRTC-Experiment.com/RecordRTC.js"></script>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
-  <script src="{% static 'popper.min.js' %}"></script>
-  <script src="{% static 'my.js' %}"></script>
-  <script src="{% static 'RecordRTC.js' %}"></script>
-  <script src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
-  <link href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
-          <link href="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/3.1.0/css/flag-icon.min.css" rel="stylesheet">
-  <link href="{% static 'bs-step.css' %}" rel="stylesheet">
 
+  
+
+  <script src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
+
+
+  <link href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/3.1.0/css/flag-icon.min.css" rel="stylesheet">
+  <link href="{% static 'bs-step.css' %}" rel="stylesheet">
+<script src="https://webgazer.cs.brown.edu/webgazer.js"></script>
   <script language="javascript">
           function autoResizeDiv()
           {

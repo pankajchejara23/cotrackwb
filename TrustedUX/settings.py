@@ -51,7 +51,10 @@ INSTALLED_APPS = [
     "crispy_forms",
     "register",
     "esurvey",
-    "formtools"
+    "formtools",
+    "djrichtextfield",
+    "sslserver"
+
 
 ]
 CRISPY_TEMPLATE_PACK = "bootstrap4"
@@ -100,6 +103,17 @@ DATABASES = {
     }
 }
 
+
+DJRICHTEXTFIELD_CONFIG = {
+    'js': ["//cdn.tinymce.com/4/tinymce.min.js"],
+    'init_template': 'djrichtextfield/init/tinymce.js',
+    'settings': {
+        'menubar': False,
+        'plugins': 'link image lists advlist',
+        'toolbar': 'bold italic underline | link image | fontselect fontsizeselect | alignleft aligncenter alignright alignjustify | numlist bullist  | removeformat',
+
+    }
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators

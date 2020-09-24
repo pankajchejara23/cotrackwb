@@ -8,6 +8,9 @@ from django.core.exceptions import ValidationError
 from django.utils.safestring import mark_safe
 from .models import Session, Audiofl
 from django.forms import ModelForm
+from djrichtextfield.models import RichTextField
+from djrichtextfield.widgets import RichTextWidget
+from quilljs.widgets import QuillEditorWidget
 
 setattr(Field, 'is_checkbox', lambda self: isinstance(self.widget, forms.CheckboxInput ))
 
@@ -23,7 +26,7 @@ class SessionForm(ModelForm):
         model = Session
         fields = ['name','groups','description']
         widgets = {
-            'description': forms.Textarea(attrs={'rows': 5}),
+            'description': RichTextWidget(),
         }
 
 class CreateForm1(forms.Form):
