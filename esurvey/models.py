@@ -3,11 +3,12 @@ from django.contrib.auth.models import User
 import uuid
 from django.contrib import admin
 import datetime
-
+import os
 
 def user_directory_path(instance, filename):
     # file will be uploaded to MEDIA_ROOT/user_<id>/<filename>
-    return 'session_{0}/group_{1}/user_{2}'.format(instance.session.id,instance.group,instance.user, filename)
+    return os.path.join(
+      "session_%d" % instance.session,"group_%d" % instance.group, "user_%s" % instance.user, filename)
 
 
 class Session(models.Model):
@@ -26,7 +27,7 @@ class Audiofl(models.Model):
     sequence = models.IntegerField(blank=True)
     description = models.TextField(blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
-    fl = models.FileField(upload_to='session_data', blank=True, )
+    fl = models.FileField(upload_to=user_directory_path, blank=True, )
 
 
 class SessionPin(models.Model):
