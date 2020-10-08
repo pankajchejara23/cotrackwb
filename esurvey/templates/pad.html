@@ -48,7 +48,7 @@
   </h3>
   <div class='card-body'>
 
-  {{session_obj.description | safe}}
+  {{session_obj.problem | safe}}
 
   </div>
 </div>
@@ -65,32 +65,36 @@
       Write solution here
     </h3>
   <div class='cardbody'>
-   <iframe id="demo" onload='autoResizeDiv()'  style="width:100%; height: 100%; position:relative; overflow:hidden; " frameBorder='0' src="http://localhost:9001/p/{{session}}_{{group}}" allowfullscreen>
+   <iframe id="demo" onload='autoResizeDiv()'  style="width:100%; height: 100%; position:relative; overflow:hidden; " frameBorder='0' src="{{etherpad_url}}/p/{{padid}}" allowfullscreen>
    </iframe>
    </div>
  </div>
-
+ <canvas id="inputCanvas" width="320" height="240" hidden></canvas>
+ <video id="inputVideo" autoplay loop muted hidden></video>
 
 
 <script>
-console.log('Started webgazer');
-wb = webgazer.begin();
-//var audio = document.querySelector('audio');
-wb.setGazeListener(function(data, elapsedTime) {
-    console.log('Function called');
-    if (data == null) {
-        return;
-    }
-    var xprediction = data.x; //these x coordinates are relative to the viewport
-    var yprediction = data.y; //these y coordinates are relative to the viewport
-    console.log(elapsedTime);
-    console.log(xprediction + ' ' +yprediction); //elapsed time is based on time since begin was called
-}).begin();
+  var client = mqtt.connect('mqtt://test.mosquitto.org',8000); // you add a ws:// url here
+client.subscribe("mqtt/demo");
 
+client.on("message", function (topic, payload) {
+  alert([topic, payload].join(": "));
+  client.end();
+});
+
+client.publish("mqtt/demo", "hello world!");
+
+
+    var videoInput = document.getElementById('inputVideo');
+    var canvasInput = document.getElementById('inputCanvas');
+
+    var htracker = new headtrackr.Tracker({ui : true});
+    htracker.init(videoInput, canvasInput);
+    htracker.start();
 
 function captureMicrophone(callback) {
-              console.log('capturing microphone ...');
-                navigator.getUserMedia = navigator.getUserMedia || navigator.mediaDevices.getUserMedia || navigator.webkitGetUserMedia;
+              console.log('capturing camera ...');
+                //navigator.getUserMedia = navigator.getUserMedia || navigator.mediaDevices.getUserMedia || navigator.webkitGetUserMedia;
                 navigator.getUserMedia({audio: true, video:true}, callback, function(error) {
                     alert('Unable to access your camera.');
                     console.error(error);

@@ -4,7 +4,7 @@ from .forms import CreateForm1,CreateForm2,CreateForm3,CreateForm4, lastForm, An
 from formtools.wizard.views import SessionWizardView
 from django import forms
 from django.db import transaction
-from .models import Project, Survey, Link, Submission, Session, SessionPin
+from .models import Project, Survey, Pad, Link, Submission, Session, SessionPin, SessionGroupMap
 from django.contrib import messages
 import uuid
 from django.contrib.sites.shortcuts import get_current_site
@@ -15,6 +15,8 @@ from django.db import transaction
 import uuid
 from django.core.files.storage import FileSystemStorage
 from .models import Audiofl
+
+from django.conf import settings
 
 CREATE_FORMS = (
     ("questionnaire", CreateForm1),
@@ -34,6 +36,14 @@ TEMPLATES = {"questionnaire": "create.html",
 import os
 from django.core.files.base import File
 from django.shortcuts import render, redirect
+import requests
+
+# Etherpad interacting function
+def call(function,arguments=None):
+    url = settings.ETHERPAD_URL + '/api/1.2.12/' +function+'?apikey='+settings.ETHERPAD_KEY
+    response = requests.post(url,arguments)
+    x = response.json()
+    return x
 
 
 
@@ -103,25 +113,59 @@ def getReport(request):
 @transaction.atomic
 def createSession(request):
 
+    print('function view called')
     if request.method == "POST":
         form = SessionForm(request.POST)
+        print(form)
         if form.is_valid():
             current_user = request.user
             s_name = form.cleaned_data['name']
             s_groups = form.cleaned_data['groups']
-            s_description = form.cleaned_data['description']
-            s = Session.objects.create(owner=current_user,name = s_name,groups = s_groups, description = s_description)
+            s_description = form.cleaned_data['problem']
+            s = Session.objects.create(owner=current_user,name = s_name,groups = s_groups, problem = s_description)
+
+            ######### Creating pads on Etherpad #################
 
 
+            x = call('createGroup')
+            print(x)
+            if (x["code"] == 0):
+                groupid = x["data"]["groupID"]
+                print('Group created successfully:',groupid)
+                sgm = SessionGroupMap.objects.create(session=s,eth_groupid=x["data"]["groupID"])
+
+                for g in range(s_groups):
+                    g =  g + 1
+                    pad_name = 'session_'+str(s.id)+'_'+'group'+'_'+str(g)
+                    print(' Creating pad:',pad_name,' with Groupid:',groupid)
+                    res = call('createGroupPad',{'groupID':groupid,'padName':pad_name})
+                    print(res)
+                    if res["code"] == 0:
+                        Pad.objects.create(session=s,eth_padid=res['data']['padID'],group=g)
+                        print('Pad created:',g)
+                    else:
+                        messages.error(request,'Error occurred while creating pads. Check your Etherpad server settings.')
+                        return redirect('project_home')
+            else:
+                messages.error(request,'Error occurred while creating groups. Check your Etherpad server settings.')
+
+                return redirect('project_home')
+
+
+            #####################################################
             while True:
                 u_pin = uuid.uuid4().hex[:6].upper()
                 objs = SessionPin.objects.filter(pin = u_pin)
                 if objs.count() == 0:
                     break
             pin_obj = SessionPin.objects.create(session=s,pin=u_pin)
-        messages.success(request, 'Project created successfully !')
-        return redirect('project_home')
+            messages.success(request, 'Project created successfully !')
+            return redirect('project_home')
+
+        else:
+            print('invalid data')
     else:
+
         form = SessionForm()
         return render(request,'session.html',{'form':form})
 
@@ -259,6 +303,13 @@ def enterForm(request):
             return render(request,"session_student_entry.html",{})
         else:
             session_obj = SessionPin.objects.get(pin=s_pin)
+
+            user = request.user
+
+            res = call('createAuthorIfNotExistsFor',{'authorMapper':user.id,'name':user.first_name})
+
+            print(res)
+
             print('Session Key:',request.session.session_key)
             if not request.session or not request.session.session_key:
                 request.session.save()
@@ -307,9 +358,15 @@ def getPad(request,group_id):
             return redirect('student_entry')
 
 
+        pad = Pad.objects.get(session=session_obj.session,group=group_id)
+        print(pad)
+        print('Fetched-->',pad.eth_padid)
+
+        padname = pad.eth_padid.split('$')
+
         form = AudioflForm()
 
-        return render(request,'pad.html',{'group':group_id,'session_obj':session_obj.session,'session':request.session['session_id'],'form':form})
+        return render(request,'pad.html',{'group':group_id,'session_obj':session_obj.session,'session':request.session['session_id'],'form':form,'etherpad_url':settings.ETHERPAD_URL,'padid':padname[1]})
     else:
         messages.error(request,'Session is not authenticated. Enter the access pin.')
         return redirect('student_entry')

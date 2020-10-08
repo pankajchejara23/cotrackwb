@@ -24,9 +24,9 @@ class AudioflForm(forms.ModelForm):
 class SessionForm(ModelForm):
     class Meta:
         model = Session
-        fields = ['name','groups','description']
+        fields = ['name','groups','problem']
         widgets = {
-            'description': RichTextWidget(),
+            'problem': RichTextWidget(),
         }
 
 class CreateForm1(forms.Form):

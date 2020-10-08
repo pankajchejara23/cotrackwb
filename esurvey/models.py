@@ -15,9 +15,22 @@ class Session(models.Model):
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     groups = models.IntegerField()
-    description = models.CharField(max_length=2000)
+    problem = models.CharField(max_length=2000,blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.BooleanField(default=False)
+
+
+class SessionGroupMap(models.Model):
+    session = models.ForeignKey(Session,on_delete=models.CASCADE)
+    eth_groupid = models.CharField(max_length=10)
+
+class Pad(models.Model):
+    session = models.ForeignKey(Session,on_delete=models.CASCADE)
+    eth_padid = models.CharField(max_length=20)
+    group = models.IntegerField()
+    eth_text = models.TextField(blank=True)
+
+
 
 
 class Audiofl(models.Model):
@@ -44,6 +57,12 @@ class Project(models.Model):
     project_status = models.BooleanField()
     archived = models.BooleanField(default=False)
     closed = models.BooleanField(default=False)
+
+
+
+
+
+
 
 
 
@@ -97,3 +116,4 @@ admin.site.register(Link)
 admin.site.register(Submission)
 admin.site.register(Audiofl)
 admin.site.register(Session)
+admin.site.register(Pad)
