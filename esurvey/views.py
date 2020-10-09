@@ -15,8 +15,116 @@ from django.db import transaction
 import uuid
 from django.core.files.storage import FileSystemStorage
 from .models import Audiofl
-
+import datetime
+import re
 from django.conf import settings
+import time
+import csv
+################### Changeset Processing ######################
+def changeset_parse (c) :
+    changeset_pat = re.compile(r'^Z:([0-9a-z]+)([><])([0-9a-z]+)(.+?)\$')
+    op_pat = re.compile(r'(\|([0-9a-z]+)([\+\-\=])([0-9a-z]+))|([\*\+\-\=])([0-9a-z]+)')
+
+    def parse_op (m):
+        g = m.groups()
+        if g[0]:
+            if g[2] == "+":
+                op = "insert"
+            elif g[2] == "-":
+                op = "delete"
+            else:
+                op = "hold"
+            return {
+                'raw': m.group(0),
+                'op': op,
+                'lines': int(g[1], 36),
+                'chars': int(g[3], 36)
+            }
+        elif g[4] == "*":
+            return {
+                'raw': m.group(0),
+                'op': 'attr',
+                'index': int(g[5], 36)
+            }
+        else:
+            if g[4] == "+":
+                op = "insert"
+            elif g[4] == "-":
+                op = "delete"
+            else:
+                op = "hold"
+            return {
+                'raw': m.group(0),
+                'op': op,
+                'chars': int(g[5], 36)
+            }
+
+    m = changeset_pat.search(c)
+    bank = c[m.end():]
+    g = m.groups()
+    ops_raw = g[3]
+    op = None
+
+    ret = {}
+    ret['raw'] = c
+    ret['source_length'] = int(g[0], 36)
+    ret['final_op'] = g[1]
+    ret['final_diff'] = int(g[2], 36)
+    ret['ops_raw'] = ops_raw
+    ret['ops'] = ops = []
+    ret['bank'] = bank
+    ret['bank_length'] = len(bank)
+    for m in op_pat.finditer(ops_raw):
+        ops.append(parse_op(m))
+    return ret
+
+def perform_changeset_curline (text, c):
+    textpos = 0
+    curline = 0
+    curline_charpos = 0
+    curline_insertchars = 0
+    bank = c['bank']
+    bankpos = 0
+    newtext = ''
+    current_attributes = []
+
+    # loop through the operations
+    # rebuilding the final text
+    for op in c['ops']:
+        if op['op'] == "attr":
+            current_attributes.append(op['index'])
+        elif op['op'] == "insert":
+            newtextposition = len(newtext)
+            insertion_text = bank[bankpos:bankpos+op['chars']]
+            newtext += insertion_text
+            bankpos += op['chars']
+            if 'lines' in op:
+                curline += op['lines']
+                curline_charpos = 0
+            else:
+                curline_charpos += op['chars']
+                curline_insertchars = op['chars']
+            # todo PROCESS attributes
+            # NB on insert, the (original/old/previous) textpos does *not* increment...
+        elif op['op'] == "delete":
+            newtextposition = len(newtext) # is this right?
+            # todo PROCESS attributes
+            textpos += op['chars']
+
+        elif op['op'] == "hold":
+            newtext += text[textpos:textpos+op['chars']]
+            textpos += op['chars']
+            if 'lines' in op:
+                curline += op['lines']
+                curline_charpos = 0
+            else:
+                curline_charpos += op['chars']
+
+    # append rest of old text...
+    newtext += text[textpos:]
+    return newtext, curline, curline_charpos, curline_insertchars
+###############################################################
+
 
 CREATE_FORMS = (
     ("questionnaire", CreateForm1),
@@ -310,10 +418,19 @@ def enterForm(request):
 
             print(res)
 
-            print('Session Key:',request.session.session_key)
-            if not request.session or not request.session.session_key:
-                request.session.save()
-                request.session['session_id'] = session_obj.id
+            authorid = res['data']['authorID']
+
+            group = SessionGroupMap.objects.get(session=session_obj.session)
+            groupid = group.eth_groupid
+
+            res2 = call('createSession',{'authorID':authorid,'groupID':groupid,'validUntil':1605096732})
+            print('=================>Session')
+            print(res2)
+
+
+            request.session['session_id'] = session_obj.id
+            request.session['sessionID'] = res2["data"]["sessionID"]
+
 
             print('Session Key:',request.session.session_key)
 
@@ -327,6 +444,49 @@ def enterForm(request):
         else:
 
             return render(request,"session_student_entry.html",{})
+
+def downloadLog(request,session_id):
+    session = Session.objects.all().filter(id=session_id)
+    if session.count() == 0:
+        messages.error(request,'Specified session id is invalid')
+        return redirect('project_home')
+    else:
+        session = Session.objects.get(id=session_id)
+        # Preparing csv data File#####
+        fname = session.name + '.csv'
+
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment;filename="' + fname +'"'
+
+        writer = csv.writer(response)
+        writer.writerow(['timestamp','author','group','char_bank','source_length','operation','difference'])
+
+        ##############################
+
+
+        pad = Pad.objects.all().filter(session=session)
+        print(pad[0].eth_padid)
+
+        for p in pad:
+
+            padid =  p.eth_padid
+            params = {'padID':pad[0].eth_padid}
+            rev_count = call('getRevisionsCount',params)
+            print(rev_count)
+            for r in range(rev_count['data']['revisions']):
+                params = {'padID':pad[0].eth_padid,'rev':r+1}
+                rev = call('getRevisionChangeset',params)
+                ath = call('getRevisionAuthor',params)
+
+                d = call('getRevisionDate',params)
+
+                cs = changeset_parse(rev['data'])
+                print(p.group)
+                writer.writerow([datetime.datetime.utcfromtimestamp(d["data"]/1000).strftime('%Y-%m-%d %H:%M:%S'),ath['data'],p.group,cs['bank'],cs['source_length'],cs['final_op'],cs['final_diff']])
+
+            #print(datetime.datetime.utcfromtimestamp(d["data"]/1000).strftime('%Y-%m-%d %H:%M:%S'),',',pad.group,',',cs["bank"],',',cs["source_length"],',',cs["final_diff"],',',cs["final_op"],',',rev["data"],',',ath["data"])
+    return response
+
 
 def uploadAudio(request):
     if request.method == 'POST':
@@ -353,6 +513,8 @@ def getPad(request,group_id):
     if 'session_id' in request.session.keys():
         session_obj = SessionPin.objects.get(id=request.session['session_id'])
 
+        eth_session = request.session['sessionID']
+
         if int(group_id) > session_obj.session.groups or int(group_id) < 1:
             messages.error(request,'Invalid group id')
             return redirect('student_entry')
@@ -366,7 +528,7 @@ def getPad(request,group_id):
 
         form = AudioflForm()
 
-        return render(request,'pad.html',{'group':group_id,'session_obj':session_obj.session,'session':request.session['session_id'],'form':form,'etherpad_url':settings.ETHERPAD_URL,'padid':padname[1]})
+        return render(request,'pad.html',{'group':group_id,'session_obj':session_obj.session,'session':request.session['session_id'],'form':form,'etherpad_url':settings.ETHERPAD_URL,'padname':pad.eth_padid,'sessionid':eth_session})
     else:
         messages.error(request,'Session is not authenticated. Enter the access pin.')
         return redirect('student_entry')

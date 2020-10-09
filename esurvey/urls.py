@@ -13,6 +13,8 @@ urlpatterns = [
     path("sessions/", login_required(views.overview), name="project_home"),  # <-- added
     path("sessions/<session_id>", login_required(views.getSession), name="session_page"),
     path("sessions/activate/<session_id>", login_required(views.activateSession), name="session_activate"),
+    path("sessions/download/<session_id>", login_required(views.downloadLog), name="download_log"),
+
     path("sessions/deactivate/<session_id>", login_required(views.deactivateSession), name="session_deactivate"),
     path("projects/new/",login_required(CompleteForm.as_view(CREATE_FORMS)), name="create"),
     path("enter/",login_required(views.enterForm), name="student_entry"),
