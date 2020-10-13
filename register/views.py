@@ -22,6 +22,11 @@ from django.contrib.auth import logout as auth_logout
 
 from django.utils.translation import gettext as _
 
+
+from django.contrib.auth.hashers import check_password
+
+
+
 from . import tokens as t
 from mailjet_rest import Client
 import os
@@ -41,15 +46,16 @@ def login(request):
 
             try:
                 user = User.objects.get(email=email)
-
+                print('user exists:',user.username,' pwd:',pwd)
                 if not user.is_active:
                     messages.warning(request, 'Your account is not activated.')
                     return redirect('login')
 
-                else:
-                    print('user is active',user.username)
+                user_login_status = authenticate(username=user.username,password=pwd)
 
-                if user is not None:
+                print(user_login_status)
+
+                if user_login_status is not None:
                     user.backend = 'django.contrib.auth.backends.ModelBackend'
                     auth_login(request,user)
                     messages.info(request, 'Successfully logged in!')
@@ -67,7 +73,10 @@ def login(request):
             print('not valid')
             form = LoginForm()
     else:
-        form = LoginForm()
+        if request.user.is_authenticated:
+            return redirect('project_home')
+        else:
+            form = LoginForm()
     return render(request, "form_base.html", {"form":form,"title":'Login',"button":'Login'})
 
 # Create your views here.
@@ -203,4 +212,5 @@ def password_reset_request(request):
                         return HttpResponse('Error')
                     return redirect ("/password_reset/done")
     password_reset_form = PasswordResetForm()
-    return render(request=request, template_name="password_reset.html", context={"password_reset_form":password_reset_form})
+    messages.info(request,'We have emailed you instructions for setting your password, if an account exists with the email you entered. You should receive them shortly. If you do not receive an email, please make sure you have entered the address you registered with, and check your spam folder.')
+    return redirect('login')

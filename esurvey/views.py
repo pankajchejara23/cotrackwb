@@ -20,6 +20,7 @@ import re
 from django.conf import settings
 import time
 import csv
+from django.contrib.auth import login as auth_login
 ################### Changeset Processing ######################
 def changeset_parse (c) :
     changeset_pat = re.compile(r'^Z:([0-9a-z]+)([><])([0-9a-z]+)(.+?)\$')
@@ -428,17 +429,26 @@ def enterForm(request):
             print(res2)
 
 
-            request.session['session_id'] = session_obj.id
-            request.session['sessionID'] = res2["data"]["sessionID"]
 
 
-            print('Session Key:',request.session.session_key)
+
+            request.session['joined'] = session_obj.session.id
+            request.session['ethsid'] = res2['data']['sessionID']
+            request.user.backend = 'django.contrib.auth.backends.ModelBackend'
+
+            auth_login(request,request.user)
+
+
 
             groups = range(session_obj.session.groups)
-            return render(request,'student_session_home.html',{'session':session_obj.session,'groups':groups})
+
+            response = render(request,'student_session_home.html',{'session':session_obj.session,'groups':groups})
+
+            response.set_cookie('joined_session',session_obj.session.id)
+            return response
     else:
-        if 'session_id' in request.session.keys():
-            session_obj = SessionPin.objects.get(id=request.session['session_id'])
+        if 'joined' in request.session.keys():
+            session_obj = SessionPin.objects.get(id=request.COOKIES['joined_session'])
             groups = range(session_obj.session.groups)
             return render(request,'student_session_home.html',{'session':session_obj.session,'groups':groups})
         else:
@@ -506,14 +516,16 @@ def uploadAudio(request):
 
         return HttpResponse('Not done')
 def LeaveSession(request):
-    request.session.flush()
+    del request.COOKIES['joined_session']
+
     return redirect('home')
 
 def getPad(request,group_id):
-    if 'session_id' in request.session.keys():
-        session_obj = SessionPin.objects.get(id=request.session['session_id'])
+    print('getPad:',request.session.keys())
+    if 'joined' in request.session.keys():
+        session_obj = SessionPin.objects.get(id=request.session['joined'])
 
-        eth_session = request.session['sessionID']
+        eth_session = request.session['ethsid']
 
         if int(group_id) > session_obj.session.groups or int(group_id) < 1:
             messages.error(request,'Invalid group id')
@@ -528,8 +540,9 @@ def getPad(request,group_id):
 
         form = AudioflForm()
 
-        return render(request,'pad.html',{'group':group_id,'session_obj':session_obj.session,'session':request.session['session_id'],'form':form,'etherpad_url':settings.ETHERPAD_URL,'padname':pad.eth_padid,'sessionid':eth_session})
+        return render(request,'pad.html',{'group':group_id,'session_obj':session_obj.session,'session':request.session['joined'],'form':form,'etherpad_url':settings.ETHERPAD_URL,'padname':pad.eth_padid,'sessionid':eth_session})
     else:
+
         messages.error(request,'Session is not authenticated. Enter the access pin.')
         return redirect('student_entry')
 

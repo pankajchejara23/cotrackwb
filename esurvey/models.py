@@ -8,7 +8,7 @@ import os
 def user_directory_path(instance, filename):
     # file will be uploaded to MEDIA_ROOT/user_<id>/<filename>
     return os.path.join(
-      "session_%d" % instance.session,"group_%d" % instance.group, "user_%s" % instance.user, filename)
+      "session_%d" % instance.session.id,"group_%d" % instance.group, "user_%s" % instance.user.id, filename)
 
 
 class Session(models.Model):
@@ -34,9 +34,9 @@ class Pad(models.Model):
 
 
 class Audiofl(models.Model):
-    session = models.IntegerField(blank=True)
+    session = models.ForeignKey(Session,on_delete=models.CASCADE)
     group = models.IntegerField(blank=True)
-    user = models.CharField(max_length=250)
+    user = models.ForeignKey(User,on_delete=models)
     sequence = models.IntegerField(blank=True)
     description = models.TextField(blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
