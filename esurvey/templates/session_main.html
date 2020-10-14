@@ -23,22 +23,94 @@
 <div id='time_display'>  </div>
 
 <hr/>
+
 <div class='container'>
  <div class='row'>
-   <div class='column'>
-   <canvas id="group1" width="300" height="400"></canvas>
+   {% for g in no_group%}
+   <div class='col'>
+    <div class="card">
+
+      <div class='card-body'>
+        <h4 class='card-title'> Group {{forloop.counter}} </h4>
+
+
+
+        <canvas id="group{{forloop.counter}}" width="100%" height="100%"></canvas>
+        <br/>
+        <a href="{% url 'group_text' session.id forloop.counter %}" class="card-link"><small>Detailed view</small></a>
+        <a href="{% url 'group_text' session_id forloop.counter %}" class="card-link"><small>Group answers</small></a>
+      </div>
+    </div>
+
    </div>
+   {% endfor %}
  </div>
 </div>
+
 <script>
-var ctx = document.getElementById('group1').getContext('2d');
+
+  // idea from https://www.geeksforgeeks.org/how-to-make-javascript-wait-for-a-api-request-to-return/
+  function makeGetRequest(path) {
+      return new Promise(function (resolve, reject) {
+          axios.get(path).then(
+              (response) => {
+                  var result = response.data;
+
+                  console.log('Processing Request');
+                  resolve(result);
+
+              },
+                  (error) => {
+                  reject(error);
+              }
+          );
+      });
+  }
+
+async function main() {
+
+for (i in {{no_group}}) {
+
+etherpad_group = '{{eth_group}}';
+session_id = {{session.id}};
+number = parseInt(i) + 1;
+group_pad = etherpad_group + '$' + 'session_' + session_id + '_group_' + number;
+
+// sending ajax request
+
+url = 'http://localhost:8000/getRevCount/'+group_pad;
+revisions = 0;
+
+
+var result = await makeGetRequest(url);
+
+
+
+
+
+
+  console.log('function called');
+  console.log(result);
+  data = result.revisions;
+  console.log(data);
+//  revisions = data['revisions'];
+  console.log('Recieved:' + data);
+
+
+
+// ajax request end
+
+console.log(group_pad);
+group_label = 'group'+number;
+console.log(group_label);
+var ctx = document.getElementById(group_label).getContext('2d');
 var myChart = new Chart(ctx, {
     type: 'bar',
     data: {
-        labels: ['deletion', 'addition'],
+        labels: ['revisions'],
         datasets: [{
-            label: 'Session stats',
-            data: [12, 19],
+            label: group_label,
+            data: [parseInt(data)],
             backgroundColor: [
                 'rgba(255, 99, 132, 0.2)',
                 'rgba(54, 162, 235, 0.2)',
@@ -52,6 +124,7 @@ var myChart = new Chart(ctx, {
         }]
     },
     options: {
+        legend: {display:false},
         scales: {
             yAxes: [{
                 ticks: {
@@ -61,6 +134,11 @@ var myChart = new Chart(ctx, {
         }
     }
 });
+
+
+}
+}
+main();
 </script>
 
 {% endblock %}

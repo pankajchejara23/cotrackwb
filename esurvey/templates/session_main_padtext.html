@@ -1,0 +1,161 @@
+
+{% extends "base.html" %}
+{% load i18n %}
+{% load crispy_forms_tags %}
+
+{% block title %} {% endblock %}
+
+{% block content %}
+<h1>Group-{{group_id}}</h1>
+<h2>{{session.name | upper}}</h2>
+
+<hr/>
+<a class='btn btn-success' href="{% url 'session_page' session_id %}">Back </a>
+<hr/>
+
+
+<div class='container'>
+<div class='row'>
+  <div class='col'>
+    <div class = 'card'>
+      <div class='card-body min-vh-100'>
+        <h2 class='card-title'> Written Text </h2><hr/>
+        {{padtext|safe}}
+      </div>
+    </div>
+  </div>
+  <div class='col'>
+    <div class = 'card'>
+      <div class='card-body min-vh-100'>
+        <h2 class='card-title'> Group Stats </h2><hr/>
+        <canvas id="stat" width="100%" height="100%"></canvas>
+      </div>
+    </div>
+  </div>
+  </div>
+  </div>
+
+<script>
+
+  // idea from https://www.geeksforgeeks.org/how-to-make-javascript-wait-for-a-api-request-to-return/
+  function makeGetRequest(path) {
+      return new Promise(function (resolve, reject) {
+          axios.get(path).then(
+              (response) => {
+                  var result = response.data;
+
+                  console.log('Processing Request');
+                  resolve(result);
+
+              },
+                  (error) => {
+                  reject(error);
+              }
+          );
+      });
+  }
+
+async function main() {
+
+
+
+
+// sending ajax request
+
+url = 'http://localhost:8000/getStats/{{pad_id}}';
+revisions = 0;
+
+
+var result = await makeGetRequest(url);
+
+
+
+
+
+
+  console.log('function called');
+  console.log(result);
+
+  var add = [];
+  var del = [];
+  var name = [];
+
+
+ for (i in result) {
+   obj = result[i];
+   add.push(obj.addition);
+   del.push(obj.deletion+5);
+   console.log('pushing..');
+   console.log(obj.name);
+   if (obj.name){
+    name.push(obj.name);
+  }
+  else{
+    name.push('no-name');
+  }
+
+ }
+
+
+
+// ajax request end
+
+
+
+
+var ctx = document.getElementById('stat').getContext('2d');
+var myChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: name,
+        datasets: [
+        {
+            label: 'Chars added',
+            data: add,
+            backgroundColor: [
+              'rgba(32, 193, 64, 0.2)',
+                'rgba(32, 193, 64, 0.2)',
+            ],
+            borderColor: [
+            'rgba(32, 193, 64, 1)',
+              'rgba(32, 193, 64, 1)',
+
+            ],
+            borderWidth: 1
+        },{
+            label: 'Chars deleted',
+            data: del,
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.2)',
+                'rgba(255, 99, 132, 0.2)',
+
+            ],
+            borderColor: [
+                'rgba(255, 99, 132, 1)',
+                'rgba(255, 99, 132, 1)',
+
+
+            ],
+            borderWidth: 1
+        }
+        ]
+    },
+    options: {
+        legend: {display:false},
+        scales: {
+            yAxes: [{
+                ticks: {
+                    beginAtZero: true
+                }
+            }]
+        }
+    }
+});
+
+
+}
+
+main();
+</script>
+
+{% endblock %}

@@ -21,6 +21,10 @@ from django.conf import settings
 import time
 import csv
 from django.contrib.auth import login as auth_login
+
+from rest_framework import permissions
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
 ################### Changeset Processing ######################
 def changeset_parse (c) :
     changeset_pat = re.compile(r'^Z:([0-9a-z]+)([><])([0-9a-z]+)(.+?)\$')
@@ -455,6 +459,84 @@ def enterForm(request):
 
             return render(request,"session_student_entry.html",{})
 
+
+@api_view(['GET'])
+@permission_classes((permissions.AllowAny,))
+def getRevCount(request,padid):
+    params = {'padID':padid}
+    rev_count = call('getRevisionsCount',params)
+    return Response({'revisions':rev_count['data']['revisions']})
+
+
+
+
+
+@api_view(['GET'])
+@permission_classes((permissions.AllowAny,))
+def getGroupPadStats(request,padid):
+    params = {'padID':padid}
+    rev_count = call('getRevisionsCount',params)
+    # get user wise Info
+    print(call('padUsersCount',params))
+    print(call('listAuthorsOfPad',params))
+
+    author_list = call('listAuthorsOfPad',params)['data']['authorIDs']
+
+    addition = {}
+    deletion = {}
+
+    author_names = {}
+
+    for author in author_list:
+        print(author)
+        addition[author] = 0
+        deletion[author] = 0
+
+        author_names[author] = call('getAuthorName',{'authorID':author})['data']
+
+
+
+    for r in range(rev_count['data']['revisions']):
+        params = {'padID':padid,'rev':r+1}
+        rev = call('getRevisionChangeset',params)
+        ath = call('getRevisionAuthor',params)
+
+        cs = changeset_parse(rev['data'])
+
+        if (cs['final_op'] == '>'):
+            addition[ath['data']] += cs['final_diff']
+        if (cs['final_op'] == '<'):
+            deletion[ath['data']] += cs['final_diff']
+
+    call_response = {}
+    author_count = len(author_names.keys())
+
+    for i,v in enumerate(author_names.keys()):
+        call_response[i] = {
+            'authorid': v,
+            'name':author_names[v],
+            'addition':addition[v],
+            'deletion':deletion[v],
+        }
+
+    #######################
+    return Response(call_response)
+
+def getGroupText(request,session_id,group_id):
+    session = Session.objects.get(id=session_id)
+    pad = Pad.objects.all().filter(session=session).filter(group=group_id)
+
+    padid = pad[0].eth_padid
+
+    res = call('getText',{'padID':padid})
+    read = call('getReadOnlyID',{'padID':padid})
+    print(read)
+    return render(request,'session_main_padtext.html',{'padtext':res['data']['text'],'session_id':session_id,'session':session,'group_id':group_id,'pad_id':padid})
+
+
+
+
+
 def downloadLog(request,session_id):
     session = Session.objects.all().filter(id=session_id)
     if session.count() == 0:
@@ -475,14 +557,14 @@ def downloadLog(request,session_id):
 
 
         pad = Pad.objects.all().filter(session=session)
-        print(pad[0].eth_padid)
+
 
         for p in pad:
 
             padid =  p.eth_padid
-            params = {'padID':pad[0].eth_padid}
+            params = {'padID':padid}
             rev_count = call('getRevisionsCount',params)
-            print(rev_count)
+
             for r in range(rev_count['data']['revisions']):
                 params = {'padID':pad[0].eth_padid,'rev':r+1}
                 rev = call('getRevisionChangeset',params)
@@ -491,8 +573,11 @@ def downloadLog(request,session_id):
                 d = call('getRevisionDate',params)
 
                 cs = changeset_parse(rev['data'])
-                print(p.group)
-                writer.writerow([datetime.datetime.utcfromtimestamp(d["data"]/1000).strftime('%Y-%m-%d %H:%M:%S'),ath['data'],p.group,cs['bank'],cs['source_length'],cs['final_op'],cs['final_diff']])
+                tp = int(d['data'])
+                print(tp,type(tp))
+                print(datetime.datetime.fromtimestamp(tp/1000).strftime('%H:%M:%S %d-%m-%Y'))
+                print('   ',datetime.datetime.fromtimestamp(tp/1000).strftime('%H:%M:%S %d-%m-%Y'));
+                writer.writerow([datetime.datetime.fromtimestamp(d["data"]/1000).strftime('%H:%M:%S %d-%m-%Y'),ath['data'],p.group,cs['bank'],cs['source_length'],cs['final_op'],cs['final_diff']])
 
             #print(datetime.datetime.utcfromtimestamp(d["data"]/1000).strftime('%Y-%m-%d %H:%M:%S'),',',pad.group,',',cs["bank"],',',cs["source_length"],',',cs["final_diff"],',',cs["final_op"],',',rev["data"],',',ath["data"])
     return response
@@ -515,6 +600,7 @@ def uploadAudio(request):
     else:
 
         return HttpResponse('Not done')
+
 def LeaveSession(request):
     del request.COOKIES['joined_session']
 
@@ -579,7 +665,12 @@ def getSession(request,session_id):
         return redirect('project_home')
     else:
         session = Session.objects.get(id=session_id)
-        return render(request,'session_main.html',{'session':session})
+
+        session_group = SessionGroupMap.objects.get(session=session)
+
+        eth_group = session_group.eth_groupid
+
+        return render(request,'session_main.html',{'session':session,'eth_group':eth_group,'no_group':list(range(session.groups))})
 
 
 class CompleteForm(SessionWizardView):

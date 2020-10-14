@@ -13,6 +13,11 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 import os
 from django.utils.translation import ugettext_lazy as _
 
+
+
+ETHERPAD_KEY = "c5e1b0d40e93259c7cea7df952e97ab188d62fafba5f54d00374fa2df4781873"
+ETHERPAD_URL ="http://localhost:9001"
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SETTINGS_PATH = os.path.dirname(os.path.dirname(__file__))
@@ -41,6 +46,11 @@ MAILJET_API_SECRET = 'f29eb65e1b46c83c577075c93612ba51'
 
 LOGIN_URL = '/login/'
 
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_EMAIL_VERIFICATION = "none"
+SOCIALACCOUNT_QUERY_EMAIL = True
+LOGIN_REDIRECT_URL = "/sessions"
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -53,11 +63,39 @@ INSTALLED_APPS = [
     "esurvey",
     "formtools",
     "djrichtextfield",
-    "sslserver"
+    'django.contrib.sites',
+    'rest_framework',
+
+    'allauth',   # <--
+    'allauth.account',   # <--
+    'allauth.socialaccount',   # <--
+    'allauth.socialaccount.providers.google',   # <--
+    'allauth.socialaccount.providers.facebook',
 
 
 ]
+
+REST_FRAMEWORK = {
+    # Use Django's standard `django.contrib.auth` permissions,
+    # or allow read-only access for unauthenticated users.
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
+    ]
+}
+
 CRISPY_TEMPLATE_PACK = "bootstrap4"
+
+AUTHENTICATION_BACKENDS = [
+
+    # Needed to login by username in Django admin, regardless of `allauth`
+    'django.contrib.auth.backends.ModelBackend',
+
+    # `allauth` specific authentication methods, such as login by e-mail
+    'allauth.account.auth_backends.AuthenticationBackend',
+
+]
+
+SITE_ID = 1
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -92,6 +130,37 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'TrustedUX.wsgi.application'
 
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        }
+    },
+    'facebook':
+       {'METHOD': 'oauth2',
+        'SCOPE': ['email','public_profile', 'user_friends'],
+        'AUTH_PARAMS': {'auth_type': 'reauthenticate'},
+        'FIELDS': [
+            'id',
+            'email',
+            'name',
+            'first_name',
+            'last_name',
+            'verified',
+            'locale',
+            'timezone',
+            'link',
+            'gender',
+            'updated_time'],
+        'EXCHANGE_TOKEN': True,
+        'LOCALE_FUNC': lambda request: 'kr_KR',
+        'VERIFIED_EMAIL': False,
+        'VERSION': 'v2.4'}
+}
 
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
@@ -108,9 +177,9 @@ DJRICHTEXTFIELD_CONFIG = {
     'js': ["//cdn.tinymce.com/4/tinymce.min.js"],
     'init_template': 'djrichtextfield/init/tinymce.js',
     'settings': {
-        'menubar': False,
-        'plugins': 'link image lists advlist',
-        'toolbar': 'bold italic underline | link image | fontselect fontsizeselect | alignleft aligncenter alignright alignjustify | numlist bullist  | removeformat',
+        'menubar': True,
+        'plugins': 'link image lists advlist table',
+        'toolbar': 'bold italic underline | link image table | fontselect fontsizeselect | alignleft aligncenter alignright alignjustify | numlist bullist  | removeformat',
 
     }
 }
@@ -142,7 +211,7 @@ LANGUAGE_CODE = 'en-us'
 LAGUAGES = (('en',_('English')),('ee',_('Estonian')),('pt',_('Portugese')))
 
 
-TIME_ZONE = 'UTC'
+TIME_ZONE =  'Asia/Kolkata'
 
 USE_I18N = True
 
@@ -154,7 +223,7 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
 ]
 
-3
+
 
 LOCALE_PATHS = (
     os.path.join(BASE_DIR, 'locale'),

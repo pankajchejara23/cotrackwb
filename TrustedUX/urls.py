@@ -28,6 +28,8 @@ urlpatterns = [
     path("password_reset/done",auth_views.PasswordResetDoneView.as_view(template_name='password_reset_done.html'), name='password_reset_done'),
     path('password_reset/confirm/<slug:uidb64>/<slug:token>/',auth_views.PasswordResetConfirmView.as_view(template_name="password_reset_confirm.html"), name='password_reset_confirm'),
     path('password_reset/complete/', auth_views.PasswordResetCompleteView.as_view(template_name='password_reset_complete.html'), name='password_reset_complete'),
+    path('api-auth/', include('rest_framework.urls')),
+
 
     path('account_activation_sent/', v.account_activation_sent, name='account_activation_sent'),
     path('activate/<slug:uidb64>/<slug:token>/',v.activate, name='activate'),
