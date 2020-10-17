@@ -26,26 +26,40 @@
 
 <div class='container'>
  <div class='row'>
-   {% for g in no_group%}
-   <div class='col'>
-    <div class="card">
+   <div class='col col-4'>
+     <div class="card">
 
-      <div class='card-body'>
-        <h4 class='card-title'> Group {{forloop.counter}} </h4>
+       <div class='card-body'>
+         <h4 class='card-title'> Detailed view </h4><hr/>
+ <p>Detailed view presents document history editing and writing activties of group's member in terms of number of characters addede or deleted.</p>
 
+     {% for g in no_group%}
 
+        <a href="{% url 'group_text' session.id forloop.counter %}" class="btn btn-info btn-block">Group-{{forloop.counter}}</a>
 
-        <canvas id="group{{forloop.counter}}" width="100%" height="100%"></canvas>
-        <br/>
-        <a href="{% url 'group_text' session.id forloop.counter %}" class="card-link"><small>Detailed view</small></a>
-        <a href="{% url 'group_text' session_id forloop.counter %}" class="card-link"><small>Group answers</small></a>
+     {% endfor %}
+      </div>
       </div>
     </div>
+   <div class='col col-8'>
+     <div class="card">
 
+       <div class='card-body'>
+         <h4 class='card-title'> Etherpad activity </h4><hr/>
+         <canvas id="overall"></canvas>
+       </div>
+     </div>
    </div>
-   {% endfor %}
+
+
+
+
+  </div>
+
+
+
  </div>
-</div>
+
 
 <script>
 
@@ -68,7 +82,8 @@
   }
 
 async function main() {
-
+var revs = [];
+var groups = [];
 for (i in {{no_group}}) {
 
 etherpad_group = '{{eth_group}}';
@@ -84,7 +99,9 @@ revisions = 0;
 
 var result = await makeGetRequest(url);
 
-
+  revs.push(result.revisions+3);
+  group = 'group-' + number
+  groups.push(group);
 
 
 
@@ -98,32 +115,31 @@ var result = await makeGetRequest(url);
 
 
 
-// ajax request end
 
-console.log(group_pad);
-group_label = 'group'+number;
-console.log(group_label);
-var ctx = document.getElementById(group_label).getContext('2d');
+
+
+
+
+}
+console.log(revs);
+console.log(groups);
+var ctx = document.getElementById('overall').getContext('2d');
 var myChart = new Chart(ctx, {
     type: 'bar',
     data: {
-        labels: ['revisions'],
+        labels: groups,
         datasets: [{
-            label: group_label,
-            data: [parseInt(data)],
-            backgroundColor: [
-                'rgba(255, 99, 132, 0.2)',
-                'rgba(54, 162, 235, 0.2)',
-            ],
-            borderColor: [
-                'rgba(255, 99, 132, 1)',
-                'rgba(54, 162, 235, 1)',
-
-            ],
+            label: 'Etherpad Activity',
+            data: revs,
             borderWidth: 1
         }]
     },
     options: {
+      plugins: {
+        colorschemes: {
+          scheme: 'brewer.Paired12'
+        }
+      },
         legend: {display:false},
         scales: {
             yAxes: [{
@@ -135,8 +151,6 @@ var myChart = new Chart(ctx, {
     }
 });
 
-
-}
 }
 main();
 </script>

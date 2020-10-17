@@ -452,7 +452,7 @@ def enterForm(request):
             return response
     else:
         if 'joined' in request.session.keys():
-            session_obj = SessionPin.objects.get(id=request.COOKIES['joined_session'])
+            session_obj = SessionPin.objects.get(id=request.session['joined'])
             groups = range(session_obj.session.groups)
             return render(request,'student_session_home.html',{'session':session_obj.session,'groups':groups})
         else:
@@ -531,7 +531,8 @@ def getGroupText(request,session_id,group_id):
     res = call('getText',{'padID':padid})
     read = call('getReadOnlyID',{'padID':padid})
     print(read)
-    return render(request,'session_main_padtext.html',{'padtext':res['data']['text'],'session_id':session_id,'session':session,'group_id':group_id,'pad_id':padid})
+    eth_session = request.session['ethsid']
+    return render(request,'session_main_padtext.html',{'padtext':res['data']['text'],'session_id':session_id,'session':session,'group_id':group_id,'pad_id':padid,'etherpad_url':settings.ETHERPAD_URL,'padname':read['data']['readOnlyID'],'sessionid':eth_session})
 
 
 
@@ -669,6 +670,7 @@ def getSession(request,session_id):
         session_group = SessionGroupMap.objects.get(session=session)
 
         eth_group = session_group.eth_groupid
+        print('Passing session id:',session)
 
         return render(request,'session_main.html',{'session':session,'eth_group':eth_group,'no_group':list(range(session.groups))})
 
