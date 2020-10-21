@@ -153,10 +153,14 @@ import requests
 
 # Etherpad interacting function
 def call(function,arguments=None):
-    url = settings.ETHERPAD_URL + '/api/1.2.12/' +function+'?apikey='+settings.ETHERPAD_KEY
-    response = requests.post(url,arguments)
-    x = response.json()
-    return x
+    try:
+        url = settings.ETHERPAD_URL + '/api/1.2.12/' +function+'?apikey='+settings.ETHERPAD_KEY
+        response = requests.post(url,arguments)
+        x = response.json()
+        return x
+    except:
+
+        return False
 
 
 
@@ -468,6 +472,12 @@ def getRevCount(request,padid):
     return Response({'revisions':rev_count['data']['revisions']})
 
 
+@api_view(['GET'])
+@permission_classes((permissions.AllowAny,))
+def getTime(request):
+    return datetime.datetime.today()
+
+
 
 
 
@@ -531,8 +541,20 @@ def getGroupText(request,session_id,group_id):
     res = call('getText',{'padID':padid})
     read = call('getReadOnlyID',{'padID':padid})
     print(read)
+
     eth_session = request.session['ethsid']
-    return render(request,'session_main_padtext.html',{'padtext':res['data']['text'],'session_id':session_id,'session':session,'group_id':group_id,'pad_id':padid,'etherpad_url':settings.ETHERPAD_URL,'padname':read['data']['readOnlyID'],'sessionid':eth_session})
+
+    valid = int(datetime.datetime.today().timestamp() + 24 * 60 * 60)
+
+    print(valid,' ',type(valid))
+
+    auth_id = call('createAuthorIfNotExistsFor',{'authorMapper':request.user.id})
+    print(auth_id)
+
+    accessSession = call('createSession',{'groupID':eth_session,'authorID':auth_id['data']['authorID'],'validUntil':valid})
+    print(accessSession)
+
+    return render(request,'session_main_padtext.html',{'padtext':res['data']['text'],'session_id':session_id,'session':session,'group_id':group_id,'pad_id':padid,'etherpad_url':settings.ETHERPAD_URL,'padname':read['data']['readOnlyID'],'sessionid':accessSession['data']['sessionID']})
 
 
 
@@ -669,7 +691,12 @@ def getSession(request,session_id):
 
         session_group = SessionGroupMap.objects.get(session=session)
 
+
+
         eth_group = session_group.eth_groupid
+
+        request.session['ethsid'] = eth_group
+
         print('Passing session id:',session)
 
         return render(request,'session_main.html',{'session':session,'eth_group':eth_group,'no_group':list(range(session.groups))})

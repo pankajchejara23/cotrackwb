@@ -7,6 +7,7 @@
 
 {% block content %}
 <h2>{{session.name | upper}}</h2>
+<h3>{{no_group}}</h3>
 <h4>Access Pin: {{session.sessionpin.pin}} </h4>
 <small> This pin can be used to join the session once it is started. </small><hr/>
 {% if not session.status %}
@@ -84,11 +85,16 @@
 async function main() {
 var revs = [];
 var groups = [];
-for (i in {{no_group}}) {
+
+var group_list = {{no_group}};
+
+
+for (var i=0; i<group_list.length;i++) {
 
 etherpad_group = '{{eth_group}}';
 session_id = {{session.id}};
 number = parseInt(i) + 1;
+console.log('before:'+i+' after:'+number);
 group_pad = etherpad_group + '$' + 'session_' + session_id + '_group_' + number;
 
 // sending ajax request
