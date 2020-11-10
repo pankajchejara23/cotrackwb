@@ -19,21 +19,36 @@ from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth import authenticate
 from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout as auth_logout
-
+from django.conf import settings
 from django.utils.translation import gettext as _
-
+from esurvey import views as esurvey_views
 
 from django.contrib.auth.hashers import check_password
+from esurvey.models import AuthorMap
 
-
+from esurvey.models import Role
 
 from . import tokens as t
 from mailjet_rest import Client
 import os
+import requests
 api_key = '39b93cd219afa7bbfda355795fcf7b94'
 api_secret = 'f29eb65e1b46c83c577075c93612ba51'
 mailjet = Client(auth=(api_key, api_secret), version='v3.1')
 
+
+# Etherpad interacting function
+def call(function,arguments=None):
+    try:
+        url = settings.ETHERPAD_URL + '/api/1.2.12/' +function+'?apikey='+settings.ETHERPAD_KEY
+        print('calling call:',url,' args:',arguments)
+        response = requests.post(url,arguments)
+        x = response.json()
+        print(x)
+        return x
+    except:
+
+        return False
 
 
 def login(request):
@@ -44,6 +59,8 @@ def login(request):
             email = form.cleaned_data['email']
             pwd = form.cleaned_data['password']
 
+            print('email:',email,' password:',pwd)
+
             try:
                 user = User.objects.get(email=email)
                 print('user exists:',user.username,' pwd:',pwd)
@@ -53,17 +70,45 @@ def login(request):
 
                 user_login_status = authenticate(username=user.username,password=pwd)
 
-                print(user_login_status)
+                print('User login status:',user_login_status)
 
                 if user_login_status is not None:
                     user.backend = 'django.contrib.auth.backends.ModelBackend'
                     auth_login(request,user)
+                    # Check etherpad author id, if not exists then created
+
+                    print('Checking etherpad id')
+
+                    objs = AuthorMap.objects.all().filter(user=request.user)
+
+                    print(objs,' ',objs.count())
+                    if objs.count()>0:
+                        authorid = objs[0].authorid
+                    else:
+                        print('making etherpad api request')
+                        res = call('createAuthorIfNotExistsFor',{'authorMapper':request.user.id,'name':request.user.first_name})
+                        authorid = res['data']['authorID']
+                        AuthorMap.objects.create(user=request.user,authorid=authorid)
+
+                    user_role = Role.objects.all().filter(user=request.user)
+
+                    if user_role[0].role == 'teacher':
+                        return redirect('project_home')
+                    else:
+                        return redirect('student_entry')
+
+
+
+                    print('etherpad id:',authorid)
+                    # end code
                     messages.info(request, 'Successfully logged in!')
-                    return redirect('project_home')
+                    return redirect('student_entry')
                 else:
+
                     messages.error(request, 'Entered password is wrong.')
                     return redirect('login')
-            except:
+            except Exception as e:
+                print(e)
                 messages.error(request, 'User does not exists.')
                 return redirect('login')
 

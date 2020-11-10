@@ -49,7 +49,7 @@ LOGIN_URL = '/login/'
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_EMAIL_VERIFICATION = "none"
 SOCIALACCOUNT_QUERY_EMAIL = True
-LOGIN_REDIRECT_URL = "/sessions"
+LOGIN_REDIRECT_URL = "/enter"
 
 INSTALLED_APPS = [
     'django.contrib.admin',

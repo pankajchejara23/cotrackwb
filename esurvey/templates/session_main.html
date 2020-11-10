@@ -7,7 +7,7 @@
 
 {% block content %}
 <h2>{{session.name | upper}}</h2>
-<h3>{{no_group}}</h3>
+
 <h4>Access Pin: {{session.sessionpin.pin}} </h4>
 <small> This pin can be used to join the session once it is started. </small><hr/>
 {% if not session.status %}
@@ -105,7 +105,7 @@ revisions = 0;
 
 var result = await makeGetRequest(url);
 
-  revs.push(result.revisions+3);
+  revs.push(result.revisions);
   group = 'group-' + number
   groups.push(group);
 
@@ -158,7 +158,8 @@ var myChart = new Chart(ctx, {
 });
 
 }
-main();
+setInterval(main,5000);
+
 </script>
 
 {% endblock %}

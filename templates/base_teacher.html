@@ -118,7 +118,7 @@ var stime =new Date(NTP.fixTime(time.getTime()));
   		<ul class="nav navbar-nav">
         {% if request.user.is_authenticated  %}
 
-        <li class='nav-item'><a class='nav-link' href="{% url 'student_entry'%}"><i class='fa fa-home'></i> Home</a></li>
+        <li class='nav-item'><a class='nav-link' href="{% url 'project_home'%}"><i class='fa fa-home'></i> Sessions</a></li>
         <li class='nav-item'><a class='nav-link' href="{% url 'logout'%}"><i class='fa fa-sign-out'></i> Logout</a></li>
 
 

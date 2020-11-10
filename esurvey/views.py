@@ -276,7 +276,7 @@ def createSession(request):
                 if objs.count() == 0:
                     break
             pin_obj = SessionPin.objects.create(session=s,pin=u_pin)
-            messages.success(request, 'Project created successfully !')
+            messages.success(request, 'Session created successfully !')
             return redirect('project_home')
 
         else:
@@ -475,7 +475,22 @@ def getRevCount(request,padid):
 @api_view(['GET'])
 @permission_classes((permissions.AllowAny,))
 def getTime(request):
-    return datetime.datetime.today()
+    print('getTime called')
+    if 't' in request.GET:
+        t = request.query_params.get('t')
+        t = int(t)
+
+        print('Client:',t)
+        cs = datetime.datetime.now()
+        print('Server:',cs)
+        current_time = int(cs.timestamp())*1000 # convert into millisecons
+        current_time += cs.microsecond/1000 # getting millisecons
+        print('Server milli:',current_time)
+        delta = int(current_time) - t/1000
+        print('delta:',delta)
+        print('Returned:',str(delta),':',str(t))
+        res = str(delta),':',str(t)
+        return Response({'offset':int(delta),'time':t})
 
 
 

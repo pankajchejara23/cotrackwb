@@ -4,7 +4,7 @@ import uuid
 from django.contrib import admin
 import datetime
 import os
-
+from django.db.models.signals import post_save
 def user_directory_path(instance, filename):
     # file will be uploaded to MEDIA_ROOT/user_<id>/<filename>
     return os.path.join(
@@ -19,19 +19,30 @@ class Session(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.BooleanField(default=False)
 
+class Role(models.Model):
+    user = models.OneToOneField(User,on_delete=models.CASCADE)
+    role = models.CharField(max_length=50,default='student')
+
+def createRole(sender,instance,created,**kwargs):
+    if created:
+        r = Role(user=instance,role='student')
+        r.save()
+
+post_save.connect(createRole,sender=User)
+
+class AuthorMap(models.Model):
+    user = models.OneToOneField(User,on_delete=models.CASCADE)
+    authorid = models.CharField(max_length=20)
 
 class SessionGroupMap(models.Model):
     session = models.ForeignKey(Session,on_delete=models.CASCADE)
-    eth_groupid = models.CharField(max_length=10)
+    eth_groupid = models.CharField(max_length=20)
 
 class Pad(models.Model):
     session = models.ForeignKey(Session,on_delete=models.CASCADE)
     eth_padid = models.CharField(max_length=20)
     group = models.IntegerField()
     eth_text = models.TextField(blank=True)
-
-
-
 
 class Audiofl(models.Model):
     session = models.ForeignKey(Session,on_delete=models.CASCADE)
@@ -41,7 +52,6 @@ class Audiofl(models.Model):
     description = models.TextField(blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
     fl = models.FileField(upload_to=user_directory_path, blank=True, )
-
 
 class SessionPin(models.Model):
     session = models.OneToOneField(Session, on_delete=models.CASCADE)
@@ -57,14 +67,6 @@ class Project(models.Model):
     project_status = models.BooleanField()
     archived = models.BooleanField(default=False)
     closed = models.BooleanField(default=False)
-
-
-
-
-
-
-
-
 
 class Survey(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
@@ -118,3 +120,5 @@ admin.site.register(Audiofl)
 admin.site.register(Session)
 admin.site.register(Pad)
 admin.site.register(SessionGroupMap)
+admin.site.register(AuthorMap)
+admin.site.register(Role)

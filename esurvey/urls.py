@@ -7,6 +7,7 @@ from .views import CompleteForm, CREATE_FORMS
 urlpatterns = [
     path("esurvey/<link>/start", login_required(views.surveyForm), name="survey_form"),
     path("esurvey/<link>", login_required(views.generateSurvey), name="get_survey"),
+
     path("projects/<project_id>/<type>", login_required(views.projectAction), name="project_action"),
     path("projects/filter/<filter>", login_required(views.filterProjects), name="project_filter"),
     path("projects/session", login_required(views.createSession), name='create_session'),
@@ -25,6 +26,8 @@ urlpatterns = [
     path("leave/",views.LeaveSession, name='leave_session'),
     path("upload/", views.uploadAudio, name='upload_audio'),
 
+    #restapi
     path("getStats/<padid>", views.getGroupPadStats),
     path("getRevCount/<padid>", views.getRevCount, name='getRevisionCount'),
+    path("getTime/",views.getTime,name='time')
     ]

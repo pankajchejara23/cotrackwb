@@ -8,8 +8,9 @@ to use configure serverUrl to an endpoint that when queried
 
 returns
     time_offset_in_miliseconds + ':' + argument_t
-
 */
+
+
 var NTP = {
   cookieShelfLife : 7, //7 days
   requiredResponses : 2,
@@ -35,8 +36,13 @@ var NTP = {
       return (date.getTime() + (date.getTimezoneOffset() * 60000));
   },
   parseServerResponse : function(data){
-     var offset = parseInt(data.responseText.split(":")[0]);
-     var origtime = parseInt(data.responseText.split(":")[1]);
+    console.log('Response:',data);
+     var offset = parseInt(data.offset);
+     var origtime = parseInt(data.time);
+
+     console.log('received:',offset);
+     console.log('received:',origtime);
+
      var delay = ((NTP.getNow() - origtime) / 2);
      offset = offset - delay;
      NTP.serverTimes.push(offset);
@@ -59,10 +65,24 @@ var NTP = {
 
   },
   getServerTime : function(){
+
+    axios.get(NTP.serverUrl, { params: { t: NTP.getNow()} }).then(
+        (response) => {
+            var result = response.data;
+            console.log(result);
+            NTP.parseServerResponse(result);
+        },
+            (error) => {
+            reject(error);
+        }
+    );
+
+    /*
       try{
 	  var req = new Ajax.Request(NTP.serverUrl,{
 	      onSuccess : NTP.parseServerResponse,
 	      method : "get",
+        contentType: "application/json",
 	      parameters : "t=" + NTP.getNow()
           });
       }
@@ -70,11 +90,17 @@ var NTP = {
 	  return false;
 	  //prototype.js not available
       }
+      */
   },
   setCookie : function(aCookieName,aCookieValue){
+    console.log('setCookie called');
+
      var date = new Date();
      date.setTime(date.getTime() + (NTP.cookieShelfLife * 24*60*60*1000));
      var expires = '; expires=' + date.toGMTString();
+     console.log(aCookieName);
+     console.log(aCookieValue);
+
      document.cookie = aCookieName + '=' + aCookieValue + expires + '; path=/';
   },
   getCookie : function(aCookieName){
