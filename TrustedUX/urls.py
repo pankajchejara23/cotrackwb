@@ -38,5 +38,6 @@ urlpatterns = [
     path('logout/',v.logout,name='logout'),
     path('home/',views.index,name='home'),
     path('accounts/', include('allauth.urls')),
+    path('changeLang/<lang_code>',views.changLang,name='change_language'),
     path('djrichtextfield/', include('djrichtextfield.urls'))
 ]

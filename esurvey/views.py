@@ -152,15 +152,17 @@ from django.shortcuts import render, redirect
 import requests
 
 # Etherpad interacting function
-def call(function,arguments=None):
+def call(function,arguments=None,request=None):
     try:
         url = settings.ETHERPAD_URL + '/api/1.2.12/' +function+'?apikey='+settings.ETHERPAD_KEY
         response = requests.post(url,arguments)
         x = response.json()
+        print('Returned:x',x)
         return x
     except:
+        messages.error(request,'The etherpad server is not accessible. Please check your etherpad server and configuration.')
+        return redirect('project_home')
 
-        return False
 
 
 
@@ -244,7 +246,7 @@ def createSession(request):
             ######### Creating pads on Etherpad #################
 
 
-            x = call('createGroup')
+            x = call('createGroup',request=request)
             print(x)
             if (x["code"] == 0):
                 groupid = x["data"]["groupID"]
@@ -255,9 +257,9 @@ def createSession(request):
                     g =  g + 1
                     pad_name = 'session_'+str(s.id)+'_'+'group'+'_'+str(g)
                     print(' Creating pad:',pad_name,' with Groupid:',groupid)
-                    res = call('createGroupPad',{'groupID':groupid,'padName':pad_name})
+                    res = call('createGroupPad',{'groupID':groupid,'padName':pad_name},request=request)
                     print(res)
-                    if res["code"] == 0:
+                    if res and res["code"] == 0:
                         Pad.objects.create(session=s,eth_padid=res['data']['padID'],group=g)
                         print('Pad created:',g)
                     else:
@@ -311,13 +313,13 @@ def filterProjects(request,filter):
 
 def projectAction(request,project_id,type):
     if type not in ['activate','deactivate','archive','unarchive']:
-        messages.danger(request,'Unsupported action.')
+        messages.error(request,'Unsupported action.')
 
     else:
         try:
-            project = Project.objects.get(id=project_id)
+            project = Session.objects.get(id=project_id)
         except Project.DoesNotExist:
-            messages.danger(request,'Project id does not exists.')
+            messages.error(request,'Project id does not exists.')
             project=None
         if project is not None:
             if type == 'activate':
@@ -461,7 +463,7 @@ def enterForm(request):
             return render(request,'student_session_home.html',{'session':session_obj.session,'groups':groups})
         else:
 
-            return render(request,"session_student_entry.html",{})
+            return render(request,"session_student_entry_v2.html",{})
 
 
 @api_view(['GET'])

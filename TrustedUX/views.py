@@ -5,3 +5,7 @@ from django.shortcuts import render, redirect
 
 def index(request):
     return render(request,'index.html',{})
+def changLang(request,lang_code):
+    translation.activate(lang_code)
+    print('Language changed')
+    return redirect('home')

@@ -19,36 +19,22 @@ from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth import authenticate
 from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout as auth_logout
-from django.conf import settings
+import random
 from django.utils.translation import gettext as _
-from esurvey import views as esurvey_views
+
 
 from django.contrib.auth.hashers import check_password
-from esurvey.models import AuthorMap
 
-from esurvey.models import Role
+
 
 from . import tokens as t
 from mailjet_rest import Client
 import os
-import requests
-api_key = '39b93cd219afa7bbfda355795fcf7b94'
-api_secret = 'f29eb65e1b46c83c577075c93612ba51'
+api_key = '55286d691dca3cf4cb8f0a6db87a5fe5'
+api_secret = 'e564414aef8ddc313372ed55c2d1c81a'
 mailjet = Client(auth=(api_key, api_secret), version='v3.1')
 
-
-# Etherpad interacting function
-def call(function,arguments=None):
-    try:
-        url = settings.ETHERPAD_URL + '/api/1.2.12/' +function+'?apikey='+settings.ETHERPAD_KEY
-        print('calling call:',url,' args:',arguments)
-        response = requests.post(url,arguments)
-        x = response.json()
-        print(x)
-        return x
-    except:
-
-        return False
+user_number = 1
 
 
 def login(request):
@@ -59,8 +45,6 @@ def login(request):
             email = form.cleaned_data['email']
             pwd = form.cleaned_data['password']
 
-            print('email:',email,' password:',pwd)
-
             try:
                 user = User.objects.get(email=email)
                 print('user exists:',user.username,' pwd:',pwd)
@@ -70,45 +54,17 @@ def login(request):
 
                 user_login_status = authenticate(username=user.username,password=pwd)
 
-                print('User login status:',user_login_status)
+                print(user_login_status)
 
                 if user_login_status is not None:
                     user.backend = 'django.contrib.auth.backends.ModelBackend'
                     auth_login(request,user)
-                    # Check etherpad author id, if not exists then created
-
-                    print('Checking etherpad id')
-
-                    objs = AuthorMap.objects.all().filter(user=request.user)
-
-                    print(objs,' ',objs.count())
-                    if objs.count()>0:
-                        authorid = objs[0].authorid
-                    else:
-                        print('making etherpad api request')
-                        res = call('createAuthorIfNotExistsFor',{'authorMapper':request.user.id,'name':request.user.first_name})
-                        authorid = res['data']['authorID']
-                        AuthorMap.objects.create(user=request.user,authorid=authorid)
-
-                    user_role = Role.objects.all().filter(user=request.user)
-
-                    if user_role[0].role == 'teacher':
-                        return redirect('project_home')
-                    else:
-                        return redirect('student_entry')
-
-
-
-                    print('etherpad id:',authorid)
-                    # end code
                     messages.info(request, 'Successfully logged in!')
-                    return redirect('student_entry')
+                    return redirect('project_home')
                 else:
-
                     messages.error(request, 'Entered password is wrong.')
                     return redirect('login')
-            except Exception as e:
-                print(e)
+            except:
                 messages.error(request, 'User does not exists.')
                 return redirect('login')
 
@@ -122,35 +78,42 @@ def login(request):
             return redirect('project_home')
         else:
             form = LoginForm()
-    return render(request, "form_base.html", {"form":form,"title":'Login',"button":'Login'})
+    return render(request, "sign_in.html", {"form":form,"title":'Login',"button":'Login'})
 
 # Create your views here.
 def register(request):
     if request.method == "POST":
         form=RegisterForm(request.POST)
 
+        print(form)
 
         if form.is_valid():
             print('form is valid')
             user = form.save(commit=False)
+
+            email = user.email
+
             user.is_active = False
+            user.username = user.email.split('@')[0] +':' + str(random.randint(0,100000))
             user.save()
             current_site = get_current_site(request)
             subject = 'Activate Your TrustexUX Account'
             message = render_to_string('account_activation_email.html', {
                 'user': user,
-                'domain': current_site.domain,
+                'domain': 'trustedux.herokuapp.com', #current_site.domain,
                 'uid': urlsafe_base64_encode(force_bytes(user.pk)),
                 'token': t.account_activation_token.make_token(user),
                 })
 
+            print('Domain:',current_site.domain)
+            print('user pk',user.pk)
             print('base64 code uid:',urlsafe_base64_encode(force_bytes(user.pk)))
             print(t.account_activation_token.make_token(user))
             data = {
               'Messages': [
                 {
                   "From": {
-                    "Email": "pankajch@tlu.ee",
+                    "Email": "pankajchejara23@gmail.com",
                     "Name": "TrustedUX Team "
                   },
                   "To": [
@@ -172,6 +135,7 @@ def register(request):
                 print('user saved')
             print(result.status_code)
             messages.info(request, 'An email with instructions to activate your account has been sent.')
+
             return redirect('login')
 
 
@@ -179,9 +143,13 @@ def register(request):
             print('Form is not valid')
 
     else:
+        c = get_current_site(request)
+        print(c.domain)
         form = RegisterForm()
 
-    return render(request, "register.html", {"form":form})
+    #return render(request, "register.html", {"form":form})
+    return render(request, "sign_up.html", {"form":form})
+
 # Create your views here.
 
 
@@ -195,6 +163,8 @@ def activate(request, uidb64, token):
     except (TypeError, ValueError, OverflowError, User.DoesNotExist):
         user = None
         print('user does not exists')
+    print('Account activation status:')
+    print(t.account_activation_token.check_token(user, token))
 
     if user is not None and t.account_activation_token.check_token(user, token):
         user.is_active = True
@@ -229,7 +199,7 @@ def password_reset_request(request):
                     subject = "TrustedUX Password Reset"
                     message = render_to_string('password_reset_email.html', {
                         'user': user,
-                        'domain': current_site.domain,
+                        'domain': 'trustedux.herokuapp.com', #current_site.domain,
                         'uid': urlsafe_base64_encode(force_bytes(user.pk)),
                         'token': default_token_generator.make_token(user),
                         'protocol': 'http'
@@ -239,7 +209,7 @@ def password_reset_request(request):
                           'Messages': [
                             {
                               "From": {
-                                "Email": "pankajch@tlu.ee",
+                                "Email": "pankajchejara23@gmail.com",
                                 "Name": "TrustedUX Team "
                               },
                               "To": [
@@ -255,7 +225,8 @@ def password_reset_request(request):
                         result = mailjet.send.create(data=data)
                     except:
                         return HttpResponse('Error')
-                    return redirect ("/password_reset/done")
-    password_reset_form = PasswordResetForm()
-    messages.info(request,'We have emailed you instructions for setting your password, if an account exists with the email you entered. You should receive them shortly. If you do not receive an email, please make sure you have entered the address you registered with, and check your spam folder.')
-    return redirect('login')
+                    messages.info(request,'We have emailed you instructions for setting your password, if an account exists with the email you entered. You should receive them shortly. If you do not receive an email, please make sure you have entered the address you registered with, and check your spam folder.')
+                    return redirect('login')
+    else:
+        password_reset_form = PasswordResetForm()
+        return render(request,'sign_pwd_reset.html',{'form':password_reset_form})
