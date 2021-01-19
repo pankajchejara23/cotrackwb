@@ -83,7 +83,7 @@ class Survey(models.Model):
 
 
 class Link(models.Model):
-    survey = models.ForeignKey(Survey, on_delete=models.CASCADE)
+    session = models.ForeignKey(Session, on_delete=models.CASCADE)
     url = models.UUIDField(default=uuid.uuid4)
     sequence = models.IntegerField()
 
@@ -91,6 +91,7 @@ class Link(models.Model):
 class Submission(models.Model):
     link = models.ForeignKey(Link,on_delete=models.CASCADE)
     sub_date = models.DateField(default=datetime.date.today)
+    submitted_user = models.ForeignKey(User,on_delete=models.CASCADE)
     q1 = models.IntegerField()
     q2 = models.IntegerField()
     q3 = models.IntegerField()
@@ -105,6 +106,29 @@ class Submission(models.Model):
     q12 = models.IntegerField()
     q13 = models.IntegerField()
     q14 = models.IntegerField()
+    q15 = models.IntegerField()
+    q16 = models.IntegerField()
+    q17 = models.IntegerField()
+    q18 = models.IntegerField()
+    q19 = models.IntegerField()
+    q20 = models.IntegerField()
+    q21 = models.IntegerField()
+    q22 = models.IntegerField()
+    q23 = models.IntegerField()
+    q24 = models.IntegerField()
+    q25 = models.IntegerField()
+    q26 = models.IntegerField()
+    q27 = models.IntegerField()
+    q28 = models.IntegerField()
+    q29 = models.IntegerField()
+    q30 = models.IntegerField()
+    q31 = models.IntegerField()
+    q32 = models.IntegerField()
+    q33 = models.IntegerField()
+    q34 = models.IntegerField()
+    q35 = models.IntegerField()
+    q36 = models.IntegerField()
+    q37 = models.IntegerField()
 
 class AnonyData(models.Model):
     submission = models.OneToOneField(Submission,on_delete=models.CASCADE)

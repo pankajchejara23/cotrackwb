@@ -1,6 +1,7 @@
 from mailjet_rest import Client
 import os
 from django.shortcuts import render
+from django.db import transaction
 from .forms import RegisterForm
 from .forms import LoginForm
 from django.http import HttpResponse
@@ -19,22 +20,38 @@ from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth import authenticate
 from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout as auth_logout
-import random
+from django.conf import settings
 from django.utils.translation import gettext as _
-
+from esurvey import views as esurvey_views
 
 from django.contrib.auth.hashers import check_password
+from esurvey.models import AuthorMap
 
-
+from esurvey.models import Role
 
 from . import tokens as t
 from mailjet_rest import Client
 import os
+import requests
 api_key = '55286d691dca3cf4cb8f0a6db87a5fe5'
 api_secret = 'e564414aef8ddc313372ed55c2d1c81a'
 mailjet = Client(auth=(api_key, api_secret), version='v3.1')
 
 user_number = 1
+
+
+# Etherpad interacting function
+def call(function,arguments=None):
+    try:
+        url = settings.ETHERPAD_URL + '/api/1.2.12/' +function+'?apikey='+settings.ETHERPAD_KEY
+        print('calling call:',url,' args:',arguments)
+        response = requests.post(url,arguments)
+        x = response.json()
+        print(x)
+        return x
+    except:
+
+        return False
 
 
 def login(request):
@@ -57,15 +74,44 @@ def login(request):
                 print(user_login_status)
 
                 if user_login_status is not None:
+                    print('before use backend')
                     user.backend = 'django.contrib.auth.backends.ModelBackend'
+
+                    print('after user backend')
                     auth_login(request,user)
-                    messages.info(request, 'Successfully logged in!')
-                    return redirect('project_home')
+
+
+
+                    print('Checking etherpad id')
+
+                    objs = AuthorMap.objects.all().filter(user=request.user)
+
+                    print(objs,' ',objs.count())
+                    if objs.count()>0:
+                        authorid = objs[0].authorid
+                    else:
+                        print('making etherpad api request')
+                        res = call('createAuthorIfNotExistsFor',{'authorMapper':request.user.id,'name':request.user.username})
+                        authorid = res['data']['authorID']
+                        AuthorMap.objects.create(user=request.user,authorid=authorid)
+
+                    user_role = Role.objects.all().filter(user=request.user)
+
+                    print(user_role)
+
+                    if user_role[0].role == 'teacher':
+                        return redirect('project_home')
+                    else:
+                        return redirect('student_entry')
+
+
                 else:
                     messages.error(request, 'Entered password is wrong.')
                     return redirect('login')
-            except:
-                messages.error(request, 'User does not exists.')
+            except Exception as e:
+                messages.error(request, 'Etherpad server is not running. Please report it to your service administrator.')
+                print(e)
+                messages.error(request,e)
                 return redirect('login')
 
 
@@ -75,12 +121,13 @@ def login(request):
             form = LoginForm()
     else:
         if request.user.is_authenticated:
-            return redirect('project_home')
+            return redirect('student_entry')
         else:
             form = LoginForm()
     return render(request, "sign_in.html", {"form":form,"title":'Login',"button":'Login'})
 
 # Create your views here.
+@transaction.atomic
 def register(request):
     if request.method == "POST":
         form=RegisterForm(request.POST)
@@ -94,18 +141,19 @@ def register(request):
             email = user.email
 
             user.is_active = False
-            user.username = user.email.split('@')[0] +':' + str(random.randint(0,100000))
+            user.username = user.email
+
             user.save()
-            current_site = get_current_site(request)
-            subject = 'Activate Your TrustexUX Account'
+
+            subject = 'Activate Your CoTrackV2 Account'
             message = render_to_string('account_activation_email.html', {
-                'user': user,
-                'domain': 'trustedux.herokuapp.com', #current_site.domain,
+                'user': user.first_name,
+                'domain': 'www.cotrack.website', #current_site.domain,
                 'uid': urlsafe_base64_encode(force_bytes(user.pk)),
                 'token': t.account_activation_token.make_token(user),
                 })
 
-            print('Domain:',current_site.domain)
+
             print('user pk',user.pk)
             print('base64 code uid:',urlsafe_base64_encode(force_bytes(user.pk)))
             print(t.account_activation_token.make_token(user))
@@ -114,14 +162,14 @@ def register(request):
                 {
                   "From": {
                     "Email": "pankajchejara23@gmail.com",
-                    "Name": "TrustedUX Team "
+                    "Name": "CoTrack Team "
                   },
                   "To": [
                     {
                       "Email": user.email,
                     }
                   ],
-                  "Subject": "Activate your TrustedUX account.",
+                  "Subject": "Activate your CoTrack account.",
                   "TextPart": message,
                 }
               ]
@@ -143,8 +191,7 @@ def register(request):
             print('Form is not valid')
 
     else:
-        c = get_current_site(request)
-        print(c.domain)
+
         form = RegisterForm()
 
     #return render(request, "register.html", {"form":form})
@@ -192,17 +239,17 @@ def password_reset_request(request):
             associated_users = User.objects.filter(email=data)
             if associated_users.exists():
                 print('user exists')
-                current_site = get_current_site(request)
+
                 for user in associated_users:
 
 
-                    subject = "TrustedUX Password Reset"
+                    subject = "CoTrack Password Reset"
                     message = render_to_string('password_reset_email.html', {
                         'user': user,
-                        'domain': 'trustedux.herokuapp.com', #current_site.domain,
+                        'domain': 'www.cotrack.website', #current_site.domain,
                         'uid': urlsafe_base64_encode(force_bytes(user.pk)),
                         'token': default_token_generator.make_token(user),
-                        'protocol': 'http'
+                        'protocol': 'https'
                         })
                     try:
                         data = {
@@ -210,14 +257,14 @@ def password_reset_request(request):
                             {
                               "From": {
                                 "Email": "pankajchejara23@gmail.com",
-                                "Name": "TrustedUX Team "
+                                "Name": "CoTrackV2 Team "
                               },
                               "To": [
                                 {
                                   "Email": user.email,
                                 }
                               ],
-                              "Subject": "TrustedUX Password Reset",
+                              "Subject": "CoTrackV2 Password Reset",
                               "TextPart": message,
                             }
                           ]

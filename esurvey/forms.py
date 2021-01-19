@@ -22,6 +22,8 @@ class AudioflForm(forms.ModelForm):
         widgets = {'description':forms.HiddenInput(),'fl': forms.HiddenInput(),'session':forms.HiddenInput(),'user':forms.HiddenInput(),'group':forms.HiddenInput(),'sequence':forms.HiddenInput()}
 
 class SessionForm(ModelForm):
+    id = forms.IntegerField(required=False)
+    id.widget = forms.HiddenInput()
     class Meta:
         model = Session
         fields = ['name','groups','problem']

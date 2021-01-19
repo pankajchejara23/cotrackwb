@@ -67,8 +67,7 @@
 
   <div class='cardbody'>
 
-    <h3>{{etherpad_url}}/auth_session?sessionID={{sessionid}}&padName={{padname}}</h3>
-   <iframe id="demo" onload='autoResizeDiv()' allow="camera microphone"  style="width:100%; height: 100%; position:relative; overflow:hidden; " frameBorder='0' src="{{etherpad_url}}/auth_session?sessionID={{sessionid}}&padName={{padname}}" allowfullscreen>
+   <iframe id="demo" onload='autoResizeDiv()' allow="camera https://www.etherpad.website;microphone https://www.etherpad.website"  style="width:100%; height: 100%; position:relative; overflow:hidden; " frameBorder='0' src="{{etherpad_url}}/auth_session?sessionID={{sessionid}}&padName={{padname}}" allowfullscreen>
    </iframe>
    </div>
  </div>
@@ -77,25 +76,52 @@
 
 
 <script>
+  //vad.js start
+  window.AudioContext = window.AudioContext || window.webkitAudioContext;
+  var audioContext = new AudioContext();
 
+  // Define function called by getUserMedia
+  function startUserMedia(stream) {
+    // Create MediaStreamAudioSourceNode
+    var source = audioContext.createMediaStreamSource(stream);
+
+    // Setup options
+    var options = {
+     source: source,
+     voice_stop: function() {console.log('voice_stop');},
+     voice_start: function() {console.log('voice_start');}
+    };
+
+    // Create VAD
+    var vad = new VAD(options);
+  }
+
+  // Ask for audio device
+  navigator.getUserMedia = navigator.getUserMedia ||
+                           navigator.mozGetUserMedia ||
+                           navigator.webkitGetUserMedia;
+  navigator.getUserMedia({audio: true}, startUserMedia, function(e) {
+          console.log("No live audio input in this browser: " + e);
+  });
+  //vad.js end
 
     var videoInput = document.getElementById('inputVideo');
     var canvasInput = document.getElementById('inputCanvas');
 
-//    var htracker = new headtrackr.Tracker({ui : false});
-//    htracker.init(videoInput, canvasInput);
-//    htracker.start();
+    var htracker = new headtrackr.Tracker();
+    htracker.init(videoInput, canvasInput);
+    htracker.start();
 
-function captureMicrophone(callback) {
+            function captureMicrophone(callback) {
               console.log('capturing camera ...');
                 //navigator.getUserMedia = navigator.getUserMedia || navigator.mediaDevices.getUserMedia || navigator.webkitGetUserMedia;
-                navigator.getUserMedia({audio: true, video:true}, callback, function(error) {
+                navigator.getUserMedia({audio: true,video:true}, callback, function(error) {
                     alert('Unable to access your camera.');
                     console.error(error);
                 });
             }
 
-function stopRecordingCallback() {
+            function stopRecordingCallback() {
                 var blob = recorder.getBlob();
                 //audio.src = URL.createObjectURL(blob);
                 //audio.muted = false;
@@ -113,26 +139,14 @@ function stopRecordingCallback() {
             data = [];
             var recorder; // globally accessible
             var blobcount = 0
+            // Create AudioContext
+
             document.getElementById('btn-start-recording').onclick = function() {
                 this.disabled = true;
                 console.log('start recording');
                 captureMicrophone(function(microphone) {
 
 
-                  //vad.js code for voice activity detection
-                  var source = audioContext.createMediaStreamSource(microphone);
-
-                  // Setup options
-                  var options = {
-                   source: source,
-                   voice_stop: function() {console.log('voice_stop');},
-                   voice_start: function() {console.log('voice_start');}
-                  };
-
-                  // Create VAD
-                  var vad = new VAD(options);
-
-                  // end of voice activity detection
 
                     //audio.muted = true;
                   //  audio.play();
@@ -194,6 +208,8 @@ document.getElementById('btn-stop-recording').onclick = function() {
                     xhr.send(fd);
                     console.log('data sent');
             }
+
+            document.getElementById('btn-start-recording').disabled = false;
 </script>
 <br/>
 

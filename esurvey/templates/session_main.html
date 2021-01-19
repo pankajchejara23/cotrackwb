@@ -6,7 +6,7 @@
 {% block title %} {% endblock %}
 
 {% block content %}
-<h2>{{session.name | upper}}</h2>
+<h2>{{session.name | upper}} <script>console.log(ServerDate());</script></h2>
 
 <h4>Access Pin: {{session.sessionpin.pin}} </h4>
 <small> This pin can be used to join the session once it is started. </small><hr/>
@@ -32,7 +32,7 @@
 
        <div class='card-body'>
          <h4 class='card-title'> Detailed view </h4><hr/>
- <p>Detailed view presents document history editing and writing activties of group's member in terms of number of characters addede or deleted.</p>
+ <p>Detailed view presents document history editing and writing activties of group's member in terms of number of characters adde or deleted.</p>
 
      {% for g in no_group%}
 
@@ -82,12 +82,59 @@
       });
   }
 
+
+
+  var ctx = document.getElementById('overall').getContext('2d');
+  var myChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+          labels: [],
+          datasets: [{
+              label: 'Etherpad Activity',
+              data: [],
+              borderWidth: 1
+          }]
+      },
+      options: {
+        plugins: {
+          colorschemes: {
+            scheme: 'brewer.Paired12'
+          }
+        },
+          legend: {display:false},
+          scales: {
+              yAxes: [{
+                  ticks: {
+                      beginAtZero: true
+                  }
+              }]
+          }
+      }
+  });
+
+
 async function main() {
+
+var chart = myChart
 var revs = [];
 var groups = [];
 
 var group_list = {{no_group}};
 
+console.log('Dataset--------')
+console.log(chart.data.datasets[0].data);
+/*
+chart.data.datasets[0].data.pop();
+chart.data.datasets[0].data.pop();
+chart.data.datasets[0].data.pop();
+chart.data.datasets[0].data.pop();
+
+
+chart.data.labels.pop();
+chart.data.labels.pop();
+chart.data.labels.pop();
+chart.data.labels.pop();
+*/
 
 for (var i=0; i<group_list.length;i++) {
 
@@ -110,8 +157,10 @@ var result = await makeGetRequest(url);
   groups.push(group);
 
 
+  chart.data.datasets[0].data[i]= result.revisions;
+  chart.data.labels[i]=group;
 
-
+  chart.update();
   console.log('function called');
   console.log(result);
   data = result.revisions;
@@ -129,36 +178,10 @@ var result = await makeGetRequest(url);
 }
 console.log(revs);
 console.log(groups);
-var ctx = document.getElementById('overall').getContext('2d');
-var myChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-        labels: groups,
-        datasets: [{
-            label: 'Etherpad Activity',
-            data: revs,
-            borderWidth: 1
-        }]
-    },
-    options: {
-      plugins: {
-        colorschemes: {
-          scheme: 'brewer.Paired12'
-        }
-      },
-        legend: {display:false},
-        scales: {
-            yAxes: [{
-                ticks: {
-                    beginAtZero: true
-                }
-            }]
-        }
-    }
-});
+
 
 }
-setInterval(main,5000);
+setInterval(main,5000,myChart);
 
 </script>
 

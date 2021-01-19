@@ -1,5 +1,5 @@
 
-{% extends "base.html" %}
+{% extends "base_form.html" %}
 {% load i18n %}
 {% load crispy_forms_tags %}
 
@@ -85,7 +85,7 @@ var result = await makeGetRequest(url);
  for (i in result) {
    obj = result[i];
    add.push(obj.addition);
-   del.push(obj.deletion+5);
+   del.push(obj.deletion);
    console.log('pushing..');
    console.log(obj.name);
    if (obj.name){

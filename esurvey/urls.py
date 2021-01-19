@@ -8,15 +8,17 @@ urlpatterns = [
     path("esurvey/<link>/start", login_required(views.surveyForm), name="survey_form"),
     path("esurvey/<link>", login_required(views.generateSurvey), name="get_survey"),
 
-    path("projects/<project_id>/<type>", login_required(views.projectAction), name="project_action"),
-    path("projects/filter/<filter>", login_required(views.filterProjects), name="project_filter"),
-    path("projects/session", login_required(views.createSession), name='create_session'),
+
+
+    path("sessions/new", login_required(views.createSession), name='create_session'),
     path("sessions/", login_required(views.overview), name="project_home"),  # <-- added
     path("sessions/<session_id>", login_required(views.getSession), name="session_page"),
-    path("sessions/activate/<session_id>", login_required(views.activateSession), name="session_activate"),
+    path("sessions/filter/<filter>", login_required(views.sessionFilter), name="session_filter"),
+    path("session/<session_id>/edit", login_required(views.editSession),name="edit_session"),
+    path("sessions/unarchive/<session_id>", login_required(views.activateSession), name="session_activate"),
     path("sessions/download/<session_id>", login_required(views.downloadLog), name="download_log"),
     path("sessions/padtext/<session_id>/<group_id>", login_required(views.getGroupText), name='group_text'),
-    path("sessions/deactivate/<session_id>", login_required(views.deactivateSession), name="session_deactivate"),
+    path("sessions/archive/<session_id>", login_required(views.deactivateSession), name="session_deactivate"),
     path("projects/new/",login_required(CompleteForm.as_view(CREATE_FORMS)), name="create"),
     path("enter/",login_required(views.enterForm), name="student_entry"),
     path("enter/pad/<group_id>",login_required(views.getPad), name="student_pad"),

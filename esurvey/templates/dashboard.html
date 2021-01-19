@@ -11,7 +11,27 @@
   <iframe id="demo" onload='autoResizeDiv()'  style="width:100%; height: 100%; position:relative; overflow:hidden; " frameBorder='0' src="http://localhost:9001" allowfullscreen>
   </iframe>
 -->
+{% if filter %}
+<div class='row'>
+  <div class="col col-md-3 col-lg-3 col-sm-6">
+<select class='form-control' onchange="location = this.value;">
+ <option value="{% url 'session_filter' filter='all'%}"">All sessions</option>
+ {%if filter%}
+ <option value="{% url 'session_filter' filter='archived'%}" selected>Archived</option>
+ {% else %}
+  <option value="{% url 'session_filter' filter='archived'%}" selected>Archived</option>
+  {% endif %}
+</select>
+ </div>
+ <div class='col col-md-2 col-xs-2 col-lg-2 col-sm-6'>
+   <a href="{% url 'create_session'%}" class="btn btn-success ml-auto"  > New session </a>
 
+ </div>
+</div>
+<br/><br/>
+
+<br/>
+{% else %}
 <div class='text-center card'>
  <div class='card-header'>  <h4> No sessions </h4> </div>
  <div class='card-body'>  <p> You do not have any sessions.<br/><br/>
@@ -19,46 +39,77 @@
  </div>
 </div>
 <br/>
+{% endif %}
 {% else %}
 <div class='row'>
   <div class="col col-md-3 col-lg-3 col-sm-6">
 <select class='form-control' onchange="location = this.value;">
- <option value="{% url 'project_filter' 'all'%}"">All studies</option>
- <option value="{% url 'project_filter' 'running'%}">Active</option>
- <option value="{% url 'project_filter' 'archived'%}">Archived</option>
+ <option value="{% url 'session_filter' filter='all'%}"">All sessions</option>
+ <option value="{% url 'session_filter' filter='archived'%}">Archived</option>
 </select>
  </div>
- <div class='col col-md-2 col-lg-2 col-sm-6'>
+ <div class='col col-md-2 col-xs-2 col-lg-2 col-sm-6'>
    <a href="{% url 'create_session'%}" class="btn btn-success ml-auto"  > New session </a>
 
  </div>
 </div>
 <br/><br/>
- <table class="table table-striped">
-  <thead>
-    <tr>
-      <th scope="col">Session</th>
-      <th scope="col">#Groups</th>
-      <th scope="col">Status</th>
-      <th scope="col">Created</th>
-      <th> </th>
-    </tr>
-  </thead>
-  <tbody>
+
 
 
 
  {% for session in sessions%}
- <tr>
-   <th><a href="{% url 'session_page' session.id %}" target='_blank'>{{session.name}}</a></th>
-   <td>{{session.groups}}</td>
-   <td>{{session.status}}</td>
-   <td>{{session.created_at}}</td>
-   <td><button class='btn btn-success'> Start </button> <button class='btn btn-danger' disabled> End </button> <button class='btn btn-info' disabled> Dashboard</button>   </td>
- </tr>
+
+     <!-- Code from TrustedUX project-->
+       <div class="card" class="m-0 p-0">
+   <div class="card-header">
+       <span  style="font-size:22px"> {{session.name | upper}}  </span>
+    <div class="btn-group float-right">
+     <button type="button" class="btn dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+       <i class="fa fa-gears"> </i>
+     </button>
+     <div class="dropdown-menu">
+
+       <a class="dropdown-item" href="{% url 'edit_session' session_id=session.id %}"><i class="fa fa-edit"></i> Edit</a>
+
+
+       {% if session.status  %}
+       <a class="dropdown-item" href="{% url 'session_activate' session_id=session.id  %}"><i class="fa fa-check"></i> Unarchive</a>
+       {% else %}
+       <a class="dropdown-item" href="{% url 'session_deactivate' session_id=session.id %}"><i class="fa fa-archive"></i> Archive</a>
+       {% endif %}
+
+
+     </div>
+  </div>
+   </div>
+   <div class="card-body">
+       <p><h3>Access pin: {{ session.sessionpin.pin }}</h3></p>
+       <p><b>No. of groups: </b> {{ session.groups }} <br/>
+       <b>Created:</b>{{ session.created_at }} <br/>
+       <br/>
+     <b></b> <a href="{% url 'session_page' session.id %}" target='_blank'>Activity monitoring</a></p>
+
+
+
+
+   </div>
+  </div>
+  <br/>
+  <script>
+  $(function () {
+    $('[data-toggle="popover"]').popover();
+  });
+
+  $(function () {
+    $('[data-toggle="tooltip"]').tooltip({ trigger: 'click' });
+  });
+
+</script>
+
+     <!-- End code -->
  {% endfor%}
- </tbody>
- </table>
+
  {% endif %}
 </div>
 <br/>
