@@ -31,20 +31,23 @@
 <hr/>
 -->
 
+
+
+
 <form action="" method="post">
 {% csrf_token %}
 
 {{form}}
 
-
+{{vad_form}}
 
 
 </form>
 
 
 <div class='card'>
-  <h3 class='card-header text-white bg-danger border-danger'>
-    Problem
+  <h3 class='card-header text-white bg-info border-info'>
+    Task
   </h3>
   <div class='card-body'>
 
@@ -61,7 +64,7 @@
 
 
   <div class='card'>
-    <h3 class='card-header text-white bg-success border-success'>
+    <h3 class='card-header text-white bg-info border-info'>
       Write solution here
     </h3>
 
@@ -88,8 +91,38 @@
     // Setup options
     var options = {
      source: source,
-     voice_stop: function() {console.log('voice_stop');},
-     voice_start: function() {console.log('voice_start');}
+     voice_stop: function() {
+       console.log('voice_stop');
+       var fd = new FormData();
+       fd.append('csrfmiddlewaretoken', "{{ csrf_token }}");
+       fd.append('session',{{session}});
+       fd.append('user',{{request.user.id}});
+       fd.append('group',{{group}});
+       fd.append('strDate',ServerDate.now());
+       fd.append('activity','voice_stop');
+       var xhr = new XMLHttpRequest();
+       console.log('opening connection');
+       xhr.open('POST', '/vad_upload/', true);
+       console.log('voice data sending')
+       xhr.send(fd);
+       console.log('voice data sent');
+     },
+     voice_start: function() {
+       console.log('voice_start');
+       var fd = new FormData();
+       fd.append('csrfmiddlewaretoken', "{{ csrf_token }}");
+       fd.append('session',{{session}});
+       fd.append('user',{{request.user.id}});
+       fd.append('group',{{group}});
+       fd.append('strDate',ServerDate.now());
+       fd.append('activity','voice_start');
+       var xhr = new XMLHttpRequest();
+       console.log('opening connection');
+       xhr.open('POST', '/vad_upload/', true);
+       console.log('voice data sending')
+       xhr.send(fd);
+       console.log('voice data sent');
+     }
     };
 
     // Create VAD

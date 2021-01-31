@@ -1,10 +1,10 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-from .forms import CreateForm1,CreateForm2,CreateForm3,CreateForm4, lastForm, AnonyForm, SessionForm, AudioflForm
+from .forms import CreateForm1,CreateForm2,CreateForm3,CreateForm4, lastForm, AnonyForm, SessionForm, AudioflForm, VADForm
 from formtools.wizard.views import SessionWizardView
 from django import forms
 from django.db import transaction
-from .models import Project, Survey, Pad, Link, Submission, Session, SessionPin, SessionGroupMap, AuthorMap
+from .models import Project, Survey, Pad, Link, Submission, Session, SessionPin, SessionGroupMap, AuthorMap, VAD
 from django.contrib import messages
 import uuid
 from django.contrib.sites.shortcuts import get_current_site
@@ -491,7 +491,10 @@ def enterForm(request):
         if session.count() == 0:
             messages.error(request,'Entered pin is invalid.')
 
-            return render(request,"session_student_entry.html",{})
+            request.user.backend = 'django.contrib.auth.backends.ModelBackend'
+            auth_login(request, request.user)
+
+            return render(request,"session_student_entry_v2.html",{})
         else:
             session_obj = SessionPin.objects.get(pin=s_pin)
 
@@ -727,6 +730,37 @@ def uploadAudio(request):
 
         return HttpResponse('Not done')
 
+
+
+def uploadVad(request):
+    if request.method == 'POST':
+        form = VADForm(request.POST,request.FILES)
+        print(form)
+        if form.is_valid():
+            print('Form is valid')
+            session = form.cleaned_data.get("session")
+            user = form.cleaned_data.get("user")
+            group = form.cleaned_data.get("group")
+            strDate = form.cleaned_data.get("strDate")
+            milli = form.cleaned_data.get("milli")
+            activity = form.cleaned_data.get("activity")
+
+            strDate = (int)(float(strDate)/1000)
+
+            dt = datetime.datetime.fromtimestamp(strDate)
+
+            vad_object = VAD.objects.create(session=session,user=user,group=group,timestamp=dt,activity=activity)
+
+            return HttpResponse('Done')
+        else:
+            print('Form not valid')
+            return HttpResponse('Form not valid')
+    else:
+
+        return HttpResponse('Not done')
+
+
+
 def LeaveSession(request):
     if 'joined' in request.session.keys():
         del request.session['joined']
@@ -753,7 +787,9 @@ def getPad(request,group_id):
 
         form = AudioflForm()
 
-        return render(request,'pad_audio_only.html',{'group':group_id,'session_obj':session_obj.session,'session':request.session['joined'],'form':form,'etherpad_url':settings.ETHERPAD_URL,'padname':pad.eth_padid,'sessionid':eth_session})
+        vad_form = VADForm()
+
+        return render(request,'pad_audio_only.html',{'group':group_id,'session_obj':session_obj.session,'session':request.session['joined'],'form':form,'vad_form':vad_form,'etherpad_url':settings.ETHERPAD_URL,'padname':pad.eth_padid,'sessionid':eth_session})
     else:
 
         messages.error(request,'Session is not authenticated. Enter the access pin.')

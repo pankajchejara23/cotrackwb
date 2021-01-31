@@ -53,6 +53,7 @@ class Audiofl(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
     fl = models.FileField(upload_to=user_directory_path, blank=True, )
 
+
 class SessionPin(models.Model):
     session = models.OneToOneField(Session, on_delete=models.CASCADE)
     pin = models.CharField(max_length=6)
@@ -80,6 +81,14 @@ class Survey(models.Model):
     subtitle = models.CharField(max_length=200)
     paragraph = models.TextField(max_length=1000)
 
+
+
+class VAD(models.Model):
+    session = models.ForeignKey(Session,on_delete=models.CASCADE)
+    group = models.IntegerField(blank=True)
+    user = models.ForeignKey(User,on_delete=models)
+    timestamp = models.DateTimeField(blank=True)
+    activity = models.CharField(max_length=10,blank=True)
 
 
 class Link(models.Model):
@@ -146,3 +155,4 @@ admin.site.register(Pad)
 admin.site.register(SessionGroupMap)
 admin.site.register(AuthorMap)
 admin.site.register(Role)
+admin.site.register(VAD)

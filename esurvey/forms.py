@@ -6,7 +6,7 @@ from django.forms.fields import Field
 from datetime import date
 from django.core.exceptions import ValidationError
 from django.utils.safestring import mark_safe
-from .models import Session, Audiofl
+from .models import Session, Audiofl, VAD
 from django.forms import ModelForm
 from djrichtextfield.models import RichTextField
 from djrichtextfield.widgets import RichTextWidget
@@ -20,6 +20,18 @@ class AudioflForm(forms.ModelForm):
         model = Audiofl
         fields = ('description', 'fl', 'session','user','group','sequence' )
         widgets = {'description':forms.HiddenInput(),'fl': forms.HiddenInput(),'session':forms.HiddenInput(),'user':forms.HiddenInput(),'group':forms.HiddenInput(),'sequence':forms.HiddenInput()}
+
+
+class VADForm(forms.ModelForm):
+    strDate = forms.CharField(max_length=20,required=False)
+    milli = forms.IntegerField(max_value=1000,required=False)
+
+    class Meta:
+        model = VAD
+        fields = ( 'session','user','group','activity')
+        widgets = {'strDate':forms.HiddenInput(),'milli':forms.HiddenInput(),'session':forms.HiddenInput(),'user':forms.HiddenInput(),'group':forms.HiddenInput(),'activity':forms.HiddenInput()}
+
+
 
 class SessionForm(ModelForm):
     id = forms.IntegerField(required=False)
